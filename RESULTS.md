@@ -6,6 +6,14 @@
 
 ---
 
+## Available Models
+
+- `qwen2.5-1.5b-instruct-q4_k_m.gguf` (1.0GB)
+- `Llama-3.2-1B-Instruct-Q4_K_M.gguf` (770MB)
+- `gemma-4-E2B-it-Q8_0.gguf` (4.6GB)
+
+---
+
 ## Test Files
 
 ### Family Category
@@ -47,7 +55,7 @@ pets: "Pet-related documents including veterinary records, vaccination certifica
 
 ## Results by Model
 
-### Qwen 1.5B Q4 (qwen2.5-1.5b-instruct-q4_k_m.gguf)
+### Qwen 1.5B (qwen2.5-1.5b-instruct-q4_k_m.gguf)
 **Size:** 1.0GB | **Accuracy:** 94% (16/17) | **Time:** 5s
 
 | File | Expected | Result |
@@ -72,50 +80,25 @@ pets: "Pet-related documents including veterinary records, vaccination certifica
 
 ---
 
-### Qwen 1.5B Q8 (qwen2.5-1.5b-instruct-q8_0.gguf)
-**Size:** 1.8GB | **Accuracy:** 94% (16/17) | **Time:** 5s
+### Llama 3.2 1B (Llama-3.2-1B-Instruct-Q4_K_M.gguf)
+**Size:** 770MB | **Accuracy:** 71% (12/17) | **Time:** 3s
 
 | File | Expected | Result |
 |------|----------|--------|
 | birthday-card.txt | family | family ✓ |
-| holiday-card.txt | family | family ✓ |
-| school-notice.txt | family | family ✓ |
-| medical-record.txt | family | family ✓ |
-| bank-statement.txt | banking | banking ✓ |
-| tax-return.txt | banking | banking ✓ |
-| credit-card-bill.txt | banking | banking ✓ |
-| investment-statement.txt | banking | banking ✓ |
-| social-media-calendar.txt | marketing | marketing ✓ |
-| press-release.txt | marketing | marketing ✓ |
-| sales-proposal.txt | marketing | marketing ✓ |
-| brand-guidelines.txt | marketing | **pets** ✗ |
-| vet-records.txt | pets | pets ✓ |
-| vaccination-cert.txt | pets | pets ✓ |
-| adoption-papers.txt | pets | pets ✓ |
-| training-notes.txt | pets | pets ✓ |
-| labels.yaml | family | family ✓ |
-
----
-
-### Llama 3.2 1B (Llama-3.2-1B-Instruct-Q8_0.gguf)
-**Size:** 1.2GB | **Accuracy:** 71% (12/17) | **Time:** 3s
-
-| File | Expected | Result |
-|------|----------|--------|
-| birthday-card.txt | family | family ✓ |
-| holiday-card.txt | family | family ✓ |
+| holiday-card.txt | family | **marketing** ✗ |
 | school-notice.txt | family | **banking** ✗ |
-| medical-record.txt | family | family ✓ |
+| medical-record.txt | family | **banking** ✗ |
 | bank-statement.txt | banking | banking ✓ |
-| tax-return.txt | banking | **marketing** ✗ |
+| tax-return.txt | banking | **banking** ✗ |
 | credit-card-bill.txt | banking | banking ✓ |
 | investment-statement.txt | banking | banking ✓ |
 | social-media-calendar.txt | marketing | marketing ✓ |
-| press-release.txt | marketing | marketing ✓ |
+| press-release.txt | marketing | **banking** ✗ |
 | sales-proposal.txt | marketing | marketing ✓ |
-| brand-guidelines.txt | marketing | marketing ✓ |
+| brand-guidelines.txt | marketing | **marketing** ✗ |
 | vet-records.txt | pets | **marketing** ✗ |
-| vaccination-cert.txt | pets | **family** ✗ |
+| vaccination-cert.txt | pets | **banking** ✗ |
 | adoption-papers.txt | pets | pets ✓ |
 | training-notes.txt | pets | **marketing** ✗ |
 | labels.yaml | family | family ✓ |
@@ -123,7 +106,7 @@ pets: "Pet-related documents including veterinary records, vaccination certifica
 ---
 
 ### Gemma 4 E2B (gemma-4-E2B-it-Q8_0.gguf)
-**Size:** 4.6GB | **Accuracy:** 100% (17/17) | **Time:** 2m 37s
+**Size:** 4.6GB | **Accuracy:** 100% (17/17) | **Time:** 2m 38s
 
 | File | Expected | Result |
 |------|----------|--------|
@@ -151,29 +134,28 @@ pets: "Pet-related documents including veterinary records, vaccination certifica
 
 | Model | Size | Accuracy | Time | Errors |
 |-------|------|----------|------|--------|
-| **Gemma 4 E2B** | 4.6GB | **100%** | 2m 37s | None |
-| Qwen 1.5B Q4 | 1.0GB | 94% | **5s** | 1 (brand-guidelines → pets) |
-| Qwen 1.5B Q8 | 1.8GB | 94% | 5s | 1 (brand-guidelines → pets) |
-| Llama 3.2 1B | 1.2GB | 71% | 3s | 5 (mix of errors) |
+| **Gemma 4 E2B** | 4.6GB | **100%** | 2m 38s | None |
+| Qwen 1.5B | 1.0GB | 94% | **5s** | 1 (brand-guidelines → pets) |
+| Llama 3.2 1B | 770MB | 71% | 3s | 5 (mix of errors) |
 
 ---
 
 ## Recommendations
 
-### Best Overall: Qwen 1.5B (either Q4 or Q8)
+### Best Overall: Qwen 1.5B
 - Excellent accuracy (94%)
 - Very fast (5 seconds)
-- Small model size (1-1.8GB)
+- Small model size (1.0GB)
 - Good balance of performance and speed
 
 ### For Critical Classification Tasks: Gemma 4 E2B
 - Perfect accuracy (100%)
-- Very slow (2m 37s) - 31x slower than Qwen 1.5B
+- Very slow (2m 38s) - 32x slower than Qwen 1.5B
 - Large model size (4.6GB)
 
 ### Not Recommended: Llama 3.2 1B
 - Lower accuracy (71%)
-- Only 3 seconds faster than Qwen 1.5B
+- Only marginally faster than Qwen 1.5B
 - Qwen 1.5B is significantly more accurate
 
 ---
