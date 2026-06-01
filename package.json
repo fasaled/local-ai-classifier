@@ -1,0 +1,22 @@
+{
+  "name": "local-ai-classifier",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "prebuild": "bun run scripts/download-llama.ts",
+    "build": "bun build --compile --target bun --outfile classifier src/index.ts",
+    "dist": "mkdir -p classifier-dist && cp classifier classifier-dist/ && cp -a bin classifier-dist/",
+    "start": "bun run src/index.ts",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "yaml": "^2.9.0"
+  }
+}

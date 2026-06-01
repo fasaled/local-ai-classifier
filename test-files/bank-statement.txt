@@ -1,0 +1,37 @@
+FIRST NATIONAL BANK - MONTHLY STATEMENT
+
+Account Holder: John Anderson
+Account Number: ****4521
+Statement Period: May 1 - May 31, 2024
+Statement Date: June 1, 2024
+
+ACCOUNT SUMMARY
+Beginning Balance:              $12,450.00
+Direct Deposits:                +$5,200.00
+Withdrawals:                    -$3,850.00
+Checks:                         -$1,200.00
+Ending Balance:                 $12,600.00
+
+TRANSACTIONS:
+Date       Description                         Amount
+--------  --------------------------------  ---------
+May 3     Direct Deposit - Employer         +$5,200.00
+May 5     ATM Withdrawal - Main St           -$200.00
+May 7     Grocery Store #123                -$156.78
+May 10    Electric Company                  -$89.50
+May 12     Check #2478 - Mortgage Co      -$1,200.00
+May 15    Online Transfer - Brokerage      -$500.00
+May 18    Restaurant Downtown              -$75.40
+May 20    Gas Station                       -$45.00
+May 22    Credit Card Payment - BankCard    -$350.00
+May 25    Pharmacy                          -$28.50
+May 28    Insurance Premium                 -$125.00
+May 30    ATM Withdrawal                    -$100.00
+
+INTEREST EARNED: $4.23 (Annual Percentage Yield: 0.45%)
+
+SAVINGS GOALS PROGRESS:
+Emergency Fund: $8,500 / $10,000 (85%)
+Vacation Fund: $2,100 / $3,000 (70%)
+
+For questions about your account, call 1-800-555-0123 or visit any branch location.

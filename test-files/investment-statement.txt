@@ -1,0 +1,36 @@
+VANGUARD BROKERAGE ACCOUNT - QUARTERLY STATEMENT
+
+Account Holder: John and Mary Anderson
+Account Number: ****7890
+Statement Period: Q4 2023 (October 1 - December 31, 2023)
+
+PORTFOLIO SUMMARY:
+Beginning Value: $245,000
+Contributions: +$5,000
+Withdrawals: -$2,000
+Gains/Losses: +$12,500
+Ending Value: $260,500
+
+ALLOCATION:
+- US Stocks: 60% ($156,300)
+- International Stocks: 20% ($52,100)
+- Bonds: 15% ($39,075)
+- Cash: 5% ($13,025)
+
+TOP HOLDINGS:
+1. Vanguard Total Stock Market ETF (VTI): $98,000
+2. Vanguard International Growth (VIGRX): $52,100
+3. Vanguard Bond Market ETF (BND): $39,075
+4. Apple Inc: $15,000
+5. Microsoft Corp: $12,000
+
+TRANSACTIONS THIS QUARTER:
+Oct 5: Bought $2,500 VTI
+Oct 15: Sold $2,000 AAPL
+Nov 1: Bought $2,500 VIGRX
+Dec 10: Dividend reinvestment - $450 VTI
+
+PERFORMANCE:
+Q4 Return: +5.1%
+YTD Return: +18.2%
+Since Inception (2019): +67.4%

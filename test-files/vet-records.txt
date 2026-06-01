@@ -1,0 +1,47 @@
+VETERINARY CLINIC - MAX'S MEDICAL RECORD
+
+Pet Name: Max
+Species: Dog (Golden Retriever)
+Breed: Golden Retriever
+Date of Birth: March 15, 2020
+Microchip #: 985112003456789
+
+OWNER INFORMATION:
+Sarah Johnson
+123 Oak Street
+Anytown, ST 12345
+Phone: (555) 123-4567
+
+VACCINATION RECORD:
+Date       Vaccine          Lot #      Expiration    Vet
+--------   ---------------  ---------  ------------  --------
+2024-03-15  Rabies           RAB2024    2025-03-15    Dr. Smith
+2024-03-15  DHPP             DHPP24     2025-03-15    Dr. Smith
+2024-03-15  Bordetella       BORT24     2024-09-15    Dr. Smith
+2023-03-20  Rabies            RAB2023    2024-03-15    Dr. Lee
+2023-03-20  DHPP             DHPP23     2024-03-20    Dr. Lee
+
+MEDICAL HISTORY:
+2024-01-15: Annual wellness exam - all normal
+2024-03-15: Rabies vaccine, DHPP vaccine, Bordetella booster
+            Prescribed: Heartworm prevention (monthly)
+            Prescribed: Flea/tick collar
+
+2023-08-22: Ear infection treatment
+            Diagnosis: Yeast infection left ear
+            Medication: OTOMAX ointment x 10 days
+
+2023-03-20: Annual vaccines, dental cleaning
+            Notes: Teeth cleaning performed under anesthesia
+            All healthy, weight 72 lbs
+
+WEIGHT HISTORY:
+2024-01-15: 74 lbs
+2023-03-20: 71 lbs
+2022-01-10: 68 lbs
+
+NEXT APPOINTMENT:
+Annual wellness exam: January 2025
+Heartworm test: March 2025
+
+PET INSURANCE: Trupanion, Policy #TRP-789456

@@ -1,0 +1,40 @@
+PERSONAL HEALTH RECORD
+
+Patient Name: Sarah Maria Johnson
+Date of Birth: April 12, 1985
+Blood Type: O+
+Allergies: Penicillin, Shellfish
+
+MEDICAL HISTORY:
+
+2024-01-15: Annual Physical Examination
+- Blood Pressure: 118/76 (normal)
+- Weight: 145 lbs
+- Height: 5'6"
+- Overall: Healthy, no concerns
+
+2023-06-20: Dermatologist Visit
+- Reason: Annual skin check
+- Diagnosis: All clear, two benign moles removed
+- Follow-up: Annual in 2024
+
+2022-09-10: Dental Cleaning
+- All good, next appointment in 6 months
+
+VACCINATIONS:
+- COVID-19 Booster: Updated
+- Flu Shot: October 2023
+- Tdap: 2019
+
+CURRENT MEDICATIONS:
+- Vitamin D supplement daily
+- Multivitamin daily
+
+FAMILY HISTORY:
+- Mother: Breast cancer survivor (diagnosed 2018, in remission)
+- Father: Type 2 diabetes (managed with diet)
+- Brother: No significant history
+
+NEXT APPOINTMENTS:
+- Annual physical: January 2025
+- Dermatologist: September 2024

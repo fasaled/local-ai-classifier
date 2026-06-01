@@ -1,0 +1,44 @@
+FORM 1040 - U.S. INDIVIDUAL INCOME TAX RETURN
+
+Tax Year: 2023
+
+Name: John R. Anderson
+SSN: ***-**-4521
+Filing Status: Married Filing Jointly
+
+WAGES AND INCOME:
+- Wages from TechCorp Inc.: $125,000
+- Interest from First National Bank: $423
+- Dividends from Vanguard ETF: $1,250
+- Total Income: $126,673
+
+ADJUSTMENTS:
+- Traditional IRA Contribution: $5,500
+- Adjusted Gross Income: $121,173
+
+STANDARD DEDUCTION: $27,700
+
+TAXABLE INCOME: $93,473
+
+TAX COMPUTED: $14,892
+
+CREDITS:
+- Child Tax Credit: $4,000
+- Earned Income Credit: $0
+- Total Credits: $4,000
+
+TAX AFTER CREDITS: $10,892
+
+PAYMENTS:
+- Federal Tax Withheld: $18,500
+- Estimated Tax Payments: $4,000
+- Total Payments: $22,500
+
+REFUND: $11,608
+
+DIRECT DEPOSIT TO:
+First National Bank
+Account: ****4521
+
+REFUND STATUS: Approved
+Deposited: April 15, 2024
