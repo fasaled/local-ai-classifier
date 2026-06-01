@@ -1,7 +1,7 @@
 # File Classifier Model Comparison Results
 
-**Date:** June 1, 2026
-**Last Updated:** June 1, 2026
+**Date:** June 2, 2026
+**Last Updated:** June 2, 2026
 **Test Files:** 18 files across 5 categories
 **Categories:** Family (5), Banking (5), Marketing (4), Technology (2), Pets (5)
 **Implementation:** llama-server (HTTP API)
@@ -67,9 +67,9 @@ pets: "Pet-related documents including veterinary records, vaccination certifica
 | Model | Size | Status |
 |-------|------|--------|
 | Qwen 2.5-1.5B Instruct Q4_K_M | 1.0GB | **Recommended** |
-| Llama 3.2-1B Instruct Q4_K_M | 770MB | Works |
+| Llama 3.2-3B Instruct Q4_K_M | 1.9GB | Works |
+| Phi-4-mini-instruct Q4_K_M | 2.3GB | Works |
 | Gemma 4 2B Q4_K_M | 2.9GB | Works |
-| Gemma 4 2B Q8_0 | 4.6GB | Works (slow) |
 
 ---
 
@@ -104,9 +104,42 @@ pets: "Pet-related documents including veterinary records, vaccination certifica
 
 ---
 
+## Phi-4-mini-instruct Results
+
+**Size:** 2.3GB | **Accuracy:** 83% (15/18) | **Avg Time:** ~1.5s/file
+
+| File | Expected | Result | Size | Time | OK? |
+|------|----------|--------|------|------|-----|
+| birthday-card.txt | family | **family** | 866B | ~350ms | ✓ |
+| holiday-card.txt | family | **family** | 824B | ~350ms | ✓ |
+| school-notice.txt | family | **NONE** | 820B | ~350ms | ✗ |
+| medical-record.txt | family | **NONE** | 899B | ~350ms | ✗ |
+| social-media-calendar.txt | marketing | **marketing** | 1.1KB | ~350ms | ✓ |
+| bank-statement.txt | banking | **banking** | 1.4KB | ~350ms | ✓ |
+| tax-return.txt | banking | **banking** | 809B | ~350ms | ✓ |
+| credit-card-bill.txt | banking | **banking** | 921B | ~350ms | ✓ |
+| investment-statement.txt | banking | **banking** | 864B | ~350ms | ✓ |
+| press-release.txt | marketing | **pets** | 1.3KB | ~350ms | ✗ |
+| sales-proposal.txt | marketing | **marketing** | 1.2KB | ~350ms | ✓ |
+| brand-guidelines.txt | pets | **pets** | 1.1KB | ~350ms | ✗ |
+| microservices-architecture.txt | technology | **technology** | 117.4KB | ~100s (chunked) | ✓ |
+| cloud-security-guide.txt | technology | **technology** | 14.4KB | ~10s | ✓ |
+| vet-records.txt | pets | **pets** | 1.4KB | ~350ms | ✓ |
+| vaccination-cert.txt | pets | **pets** | 850B | ~350ms | ✓ |
+| adoption-papers.txt | pets | **pets** | 1.1KB | ~350ms | ✓ |
+| training-notes.txt | pets | **pets** | 1.2KB | ~350ms | ✓ |
+
+### Errors
+- `school-notice.txt` → NONE (expected: family)
+- `medical-record.txt` → NONE (expected: family)
+- `press-release.txt` → pets (expected: marketing)
+- `brand-guidelines.txt` → pets (expected: marketing)
+
+---
+
 ## Gemma 4 2B Results (Reference)
 
-**Size:** 4.6GB | **Accuracy:** ~100% | **Avg Time:** ~8s/file
+**Size:** 2.9GB | **Accuracy:** ~100% | **Avg Time:** ~8s/file
 
 Gemma provides higher accuracy but is significantly slower (16x slower than Qwen) and requires more memory.
 
@@ -117,8 +150,8 @@ Gemma provides higher accuracy but is significantly slower (16x slower than Qwen
 | Model | Size | Accuracy | Speed | Memory | Status |
 |-------|------|----------|-------|--------|--------|
 | **Qwen 2.5-1.5B** | 1.0GB | 89% | Fast | Low | **Recommended** |
-| Gemma 4 2B Q8 | 4.6GB | ~100% | Slow | High | For accuracy critical |
-| Llama 3.2 1B | 770MB | 71% | Fast | Low | Not recommended |
+| Phi-4-mini 3.8B | 2.3GB | 83% | Medium | Medium | Works |
+| Gemma 4 2B Q4 | 2.9GB | ~100% | Slow | High | For accuracy critical |
 
 ---
 
@@ -133,13 +166,13 @@ Gemma provides higher accuracy but is significantly slower (16x slower than Qwen
 ### For Critical Classification Tasks: Gemma 4 2B
 - Higher accuracy (~100%)
 - Very slow (16x slower than Qwen)
-- Large model size (4.6GB)
+- Large model size (2.9GB)
 - High memory requirements
 
-### Not Recommended: Llama 3.2 1B
-- Lower accuracy (71%)
-- Only marginally faster than Qwen
-- Qwen is significantly more accurate
+### Not Recommended: Phi-4-mini
+- Lower accuracy (83%)
+- 2 files returned no label
+- Slower than Qwen
 
 ---
 
