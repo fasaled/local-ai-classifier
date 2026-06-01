@@ -38,6 +38,10 @@ models/
 
 # Compiled binary
 classifier-dist
+classifier
+
+# Test files
+test-response.ts
 
 # Classifier server info
 .classifier/
