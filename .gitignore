@@ -36,5 +36,8 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Local models (user-specific)
 models/
 
+# Compiled binary
+classifier-dist
+
 # Classifier server info
 .classifier/

@@ -88,9 +88,8 @@ function clearServerInfo(): void {
 }
 
 export async function startServer(modelPath: string, port: number = 8080): Promise<string> {
-  if (serverUrl) {
-    await stopServer();
-  }
+  await stopServer();
+  await new Promise((resolve) => setTimeout(resolve, 1000));
 
   const llamaServer = await findLlamaServer();
   if (!llamaServer) {
@@ -106,6 +105,7 @@ export async function startServer(modelPath: string, port: number = 8080): Promi
     "-c", String(MAX_CONTEXT),
     "--port", String(port),
     "--log-disable",
+    "--parallel", "1",
   ];
 
   serverProcess = spawn(llamaServer, args, {
@@ -150,29 +150,24 @@ export async function startServer(modelPath: string, port: number = 8080): Promi
 
 export async function stopServer(): Promise<void> {
   if (serverProcess) {
-    serverProcess.kill();
+    serverProcess.kill("SIGTERM");
     serverProcess = null;
-    serverUrl = null;
-    loadedModelPath = null;
-    clearServerInfo();
-    console.log("llama-server stopped.\n");
-  } else {
-    try {
-      const response = await fetch("http://localhost:8080/shutdown", { method: "POST" });
-      if (response.ok) {
-        console.log("llama-server stopped.\n");
-      }
-    } catch {}
-
-    try {
-      execSync("pkill -f llama-server");
-      console.log("llama-server stopped.\n");
-    } catch {}
-
-    clearServerInfo();
   }
+
+  try {
+    execSync("pkill -f llama-server", { encoding: "utf-8" });
+  } catch {}
+
+  try {
+    await fetch("http://localhost:8080/shutdown", { method: "POST" });
+  } catch {}
+
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
   serverUrl = null;
   loadedModelPath = null;
+  clearServerInfo();
+  console.log("llama-server stopped.\n");
 }
 
 export async function isServerRunning(): Promise<boolean> {
