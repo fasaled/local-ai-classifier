@@ -18,7 +18,7 @@ The process is non-destructive: it never moves, renames, or modifies file conten
 |---|---|
 | Runtime / bundler | Bun |
 | LLM inference | llama.cpp (llama-server) |
-| Model | Liquid LFM 2.5 (GGUF) |
+| Model | Qwen 2.5-1.5B (GGUF) |
 | macOS tagging | `xattr` (native extended attributes) |
 | Configuration | YAML |
 | Distribution | Self-contained folder with executable + llama-server |
@@ -27,8 +27,9 @@ The process is non-destructive: it never moves, renames, or modifies file conten
 
 ## Installation
 
-1. Download the `classifier-dist/` folder
-2. Ensure you have a GGUF model file (e.g., Liquid LFM 2.5)
+1. Download the `classifier-dist/` folder or clone the repository
+2. Ensure you have a GGUF model file (e.g., Qwen 2.5-1.5B)
+3. Start the server with the model path
 
 No additional installation required - the tool is self-contained.
 
@@ -37,27 +38,23 @@ No additional installation required - the tool is self-contained.
 ## Quick Start
 
 ```bash
-# All-in-one: starts server, classifies, stops server
-./classifier --folder /path/to/folder --labels labels.yaml --model /path/to/model.gguf
+# 1. Start the server and load model
+./classifier start --model /path/to/model.gguf
+
+# 2. Classify files
+./classifier classify --folder /path/to/folder --labels labels.yaml
+
+# 3. Stop the server when done
+./classifier stop
 ```
 
----
-
-## Server Management (Recommended for Multiple Runs)
-
-The model stays in memory while the server is running. The model path is remembered after first start.
+### All-in-one command
 
 ```bash
-# 1. Start server (load model once)
-./classifier --server-start --model /path/to/model.gguf
-
-# 2. Run multiple classifications (no need to specify model again)
-./classifier --folder /path/to/folder1 --labels labels.yaml
-./classifier --folder /path/to/folder2 --labels labels.yaml
-./classifier --folder /path/to/folder3 --labels labels.yaml
-
-# 3. Stop server (unload model, free memory)
-./classifier --server-stop
+# Starts server, classifies, stops server automatically
+./classifier start --model /path/to/model.gguf && \
+./classifier classify --folder /path/to/folder --labels labels.yaml && \
+./classifier stop
 ```
 
 ---
@@ -65,49 +62,51 @@ The model stays in memory while the server is running. The model path is remembe
 ## Usage
 
 ```bash
-# Start server (first time only)
-./classifier --server-start --model /path/to/model.gguf
+# Start server (load model once)
+./classifier start --model /path/to/model.gguf
 
-# Classify (model path remembered)
-./classifier --folder /path/to/folder --labels labels.yaml
-./classifier --folder /path/to/folder --labels labels.yaml --force
+# Run multiple classifications (model stays in memory)
+./classifier classify --folder /path/to/folder1 --labels labels.yaml
+./classifier classify --folder /path/to/folder2 --labels labels.yaml
+
+# Force reprocess all files
+./classifier classify --folder /path/to/folder --labels labels.yaml --force
 
 # List tags for files
-./classifier --list-tags /path/to/folder
+./classifier list-tags /path/to/folder
 
 # Remove AI tags from files
-./classifier --remove-tags /path/to/folder
+./classifier remove-tags /path/to/folder
 
-# Stop server
-./classifier --server-stop
+# Stop server (unload model)
+./classifier stop
 ```
 
 ### Parameters
 
 | Parameter | Description |
 |---|---|
-| `--folder <path>` | Path to the folder to process |
-| `--labels <yaml>` | Path to the YAML file with label definitions |
-| `--model <gguf>` | Path to the GGUF model file (only needed for --server-start) |
-| `--force` | Reprocess files already classified by this tool |
-| `--server-start` | Start llama-server and load model |
-| `--server-stop` | Stop llama-server and unload model |
-| `--list-tags <path>` | List tags for all files in a folder |
-| `--remove-tags <path>` | Remove AI tags from all files in a folder |
+| `start --model <path>` | Start llama-server and load model |
+| `classify --folder <path>` | Path to the folder to process |
+| `classify --labels <yaml>` | Path to the YAML file with label definitions |
+| `classify --force` | Reprocess files already classified |
+| `list-tags <path>` | List tags for all files in a folder |
+| `remove-tags <path>` | Remove AI tags from all files in a folder |
+| `stop` | Stop llama-server and unload model |
 
 ---
 
 ## Label Definition
 
-Labels are defined in a YAML file using the format `label: natural language description`. The description is what the model uses to understand the concept.
+Labels are defined in a YAML file using the format `label: natural language description`. The description helps the model understand the concept.
 
 ```yaml
 # labels.yaml
-invoice: "Billing, payment, or service charge documents"
-legal: "Contracts, agreements, terms, or legal documents"
-personal: "Personal notes, journals, or private writing"
-project: "Technical documentation, specifications, or project plans"
-reference: "Reference material, guides, manuals, or lookup documentation"
+family: "Family documents including personal letters, birthday cards, family photos descriptions, home videos notes, school documents, medical records, insurance policies"
+banking: "Banking and financial documents including account statements, investment portfolios, tax returns, credit card bills, loan applications, ATM receipts"
+marketing: "Marketing and sales documents including proposals, brochures, brand guidelines, social media posts, press releases, market analysis"
+technology: "Technology documents including software architecture, programming guides, system design, technical documentation, API specifications, security guides"
+pets: "Pet-related documents including veterinary records, vaccination certificates, pet care guides, adoption papers, pet insurance, training notes"
 ```
 
 ---
@@ -122,17 +121,9 @@ On startup, the tool lists all text files in the folder and reads their current 
 
 ### 2. Per-file extraction
 
-For each file to be processed, two types of information are extracted:
-
-**System metadata:**
-- Filename and extension
-- Size in bytes
-- Creation and last modified dates
-- Existing macOS tags (if any)
-
-**Text content:**
-- Direct file read
-- Tokenization to determine the context strategy
+For each file to be processed:
+- Read file content
+- Get file metadata (size, dates)
 
 ### 3. Context strategy
 
@@ -141,40 +132,27 @@ The model operates with a maximum context of 32k tokens.
 ```
 Does the content fit within 32k tokens?
   ├── Yes → direct classification (1 model call)
-  └── No  → chunk classification + refinement (N+1 model calls)
+  └── No  → chunk classification (multiple calls + majority voting)
 ```
 
-**Direct classification:** a single prompt is built with the metadata, full content, and the list of available labels.
+**Direct classification:** a single prompt with metadata, content, and labels.
 
 **Chunk classification:**
-- Content is split into fragments that fit within the context window
-- Each fragment is classified independently → candidate labels
-- A final refinement call receives the candidate summary from all fragments and produces the consolidated classification
+- Content is split into fragments that fit within context
+- Each fragment is classified independently
+- Final label determined by majority voting
 
 ### 4. Classification
 
-The model receives the prompt and responds exclusively in JSON:
-
-```json
-{
-  "labels": ["invoice", "legal"],
-  "confidence": [0.92, 0.71]
-}
-```
-
-**Application rules:**
-- Only labels with confidence above 50% are applied
-- Multiple labels can be applied to the same file
-- If no label exceeds the threshold, the file is left untagged
+The model receives the prompt and responds exclusively with a single label name.
 
 ### 5. Tagging
 
 Tags are written to the file's extended attributes via `xattr`:
-
-- The semantic labels resulting from the classification
+- The semantic label from classification
 - The reserved tag `ai-classified` as a processing marker
 
-Tags are immediately visible in the macOS Finder.
+Tags are immediately visible in macOS Finder.
 
 ---
 
@@ -197,43 +175,50 @@ Does the file have the "ai-classified" tag?
 ### --force behavior
 
 With `--force`, the tool distinguishes between its own tags and external tags:
-
-- **Own tags** (generated in the previous classification run): removed and rewritten
-- **External tags** (manually added by the user in Finder or other apps): preserved intact
-
-To make this distinction, the tool stores a record of which semantic labels it wrote in an additional extended attribute on the file (`ai-classified-labels`).
+- **Own tags** (from previous classification): removed and rewritten
+- **External tags** (manually added): preserved intact
 
 ---
 
 ## Output Log
 
-### Real-time output (stdout)
+### Real-time output
 
 ```
-[00:01] SKIP   contract_2024.txt          → already classified
-[00:03] OK     meeting_notes.md           → project, reference
-[00:07] OK     invoice_march.txt          → invoice  (chunks: 4, calls: 5)
-[00:09] NONE   introduction.txt           → no label (insufficient confidence)
-[00:10] SKIP   proposal_draft.md          → already classified
-```
+Loading model (this may take a minute)...
 
-| Prefix | Meaning |
-|---|---|
-| `OK` | Classified and tagged successfully |
-| `NONE` | Processed but no label assigned (confidence < 50%) |
-| `SKIP` | Skipped because the `ai-classified` marker is present |
+Model loaded and ready.
+Loading labels...
+Loaded 5 labels: family, banking, marketing, technology, pets
+Scanning folder...
+Found 9 text files
 
-### Final summary
-
-```
+[00:01]  OK     adoption-papers.txt       → pets       1.1KB   572ms   qwen2.5-1.5b-instruct-q4_k_m.gguf
+[00:02]  OK     vet-records.txt           → pets       1.4KB   875ms   qwen2.5-1.5b-instruct-q4_k_m.gguf
+[00:02]  OK     school-notice.txt         → family     820B    684ms   qwen2.5-1.5b-instruct-q4_k_m.gguf
+...
 ──────────────────────────────────────────
-Processed:             8 files
-  Tagged:              6
-  No label:            2  (insufficient confidence)
-Skipped:               4  (already classified)
-Total time:            3m 47s
+Processed:             9 files
+  Tagged:              9
+  No label:            0  (no matching label)
+Skipped:               0  (already classified)
+Total time:            6s
 ──────────────────────────────────────────
+
+Server still running. Run 'classifier stop' to unload when done.
 ```
+
+### Log columns
+
+| Column | Description |
+|--------|-------------|
+| Timestamp | Elapsed time since start |
+| Status | OK (success), NONE (no label), SKIP (skipped) |
+| Filename | File name |
+| Label | Classification result |
+| Size | File size (B, KB, or MB) |
+| Time | Processing time for this file |
+| Model | Model filename |
 
 ---
 
@@ -241,51 +226,43 @@ Total time:            3m 47s
 
 | Parameter | Value |
 |---|---|
-| Model | Liquid LFM 2.5 (or any GGUF model) |
-| Format | GGUF |
-| Maximum context | 32 768 tokens |
+| Model | Qwen 2.5-1.5B Instruct (GGUF) |
+| Context | 32 768 tokens |
 | Temperature | 0 (deterministic) |
-| Response format | JSON only |
-| Inference | Local via llama.cpp server, no network |
-
-The model responds only with the classification JSON, with no reasoning or additional text. This is enforced through system instructions and restrictive inference parameters.
+| Inference | Local via llama-server, no network |
 
 ---
 
-## Distribution
+## Building
 
-The tool is distributed as a self-contained folder containing:
-- The compiled Bun executable (`classifier`)
-- llama.cpp server binary and required dylibs
-
-```
-classifier-dist/
-├── classifier          ← compiled executable
-└── bin/               ← llama-server + dependencies
-    ├── llama-server
-    ├── libllama*.dylib
-    └── libggml*.dylib
-```
-
----
-
-## Building from Source
-
-### Requirements
-- Bun runtime
-- GGUF model file
-
-### Build Commands
 ```bash
-bun run build   # Downloads llama-server + builds classifier executable
-bun run dist    # Creates self-contained classifier-dist/ folder
+# Install dependencies
+bun install
+
+# Run directly
+bun run src/index.ts --help
+
+# Build standalone executable
+bun build --compile --outfile classifier src/index.ts
 ```
 
 ---
 
-## Current Limitations (v1)
+## Limitations
 
-- Processes plain text files only (`.txt`, `.md`, `.csv`, `.json`, `.yaml`, `.xml`, and similar)
+- Processes plain text files only (`.txt`, `.md`, `.csv`, `.json`, `.yaml`, `.xml`)
 - Does not process PDFs, images, binary files, or Office documents
-- Processing is sequential: one file at a time
-- Requires macOS (Finder tags are specific to this operating system)
+- Requires macOS (Finder tags are macOS-specific)
+- Requires llama-server binary in `bin/` directory or in PATH
+
+---
+
+## Results
+
+See [RESULTS.md](./RESULTS.md) for detailed model comparison results.
+
+**Recommended Model: Qwen 2.5-1.5B**
+- Good accuracy (~90%)
+- Fast processing (~500ms per file)
+- Small model size (1.0GB)
+- Excellent balance of performance and speed

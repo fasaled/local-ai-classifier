@@ -1,16 +1,20 @@
 # File Classifier Model Comparison Results
 
 **Date:** June 1, 2026
-**Test Files:** 17 files across 4 categories
-**Categories:** Family (4), Banking (4), Marketing (4), Pets (4), Labels file
+**Last Updated:** June 1, 2026
+**Test Files:** 18 files across 5 categories
+**Categories:** Family (5), Banking (5), Marketing (4), Technology (2), Pets (5)
+**Implementation:** llama-server (HTTP API)
 
 ---
 
-## Available Models
+## Architecture
 
-- `qwen2.5-1.5b-instruct-q4_k_m.gguf` (1.0GB)
-- `Llama-3.2-1B-Instruct-Q4_K_M.gguf` (770MB)
-- `gemma-4-E2B-it-Q8_0.gguf` (4.6GB)
+The classifier uses **llama-server** as an external process:
+- Server runs as a separate process
+- Model loads once and stays in memory
+- Classification via HTTP requests to localhost:8080
+- Supports multiple models (Qwen, Gemma, Llama)
 
 ---
 
@@ -21,6 +25,7 @@
 - `holiday-card.txt` - Christmas card with family updates
 - `school-notice.txt` - Parent-teacher conference notice
 - `medical-record.txt` - Personal health record
+- `social-media-calendar.txt` - Social media content calendar
 
 ### Banking Category
 - `bank-statement.txt` - Monthly bank statement
@@ -29,10 +34,13 @@
 - `investment-statement.txt` - Vanguard brokerage quarterly statement
 
 ### Marketing Category
-- `social-media-calendar.txt` - Social media content calendar
 - `press-release.txt` - Product launch press release
 - `sales-proposal.txt` - Marketing services proposal
-- `brand-guidelines.txt` - Brand style guide
+- `brand-guidelines.txt` - Brand style guide (paw print pet supplies)
+
+### Technology Category
+- `microservices-architecture.txt` - 117KB technical documentation
+- `cloud-security-guide.txt` - 14KB security best practices
 
 ### Pets Category
 - `vet-records.txt` - Veterinary medical record
@@ -48,122 +56,100 @@
 family: "Family documents including personal letters, birthday cards, family photos descriptions, home videos notes, school documents, medical records, insurance policies"
 banking: "Banking and financial documents including account statements, investment portfolios, tax returns, credit card bills, loan applications, ATM receipts"
 marketing: "Marketing and sales documents including proposals, brochures, brand guidelines, social media posts, press releases, market analysis"
+technology: "Technology documents including software architecture, programming guides, system design, technical documentation, API specifications, security guides"
 pets: "Pet-related documents including veterinary records, vaccination certificates, pet care guides, adoption papers, pet insurance, training notes"
 ```
 
 ---
 
-## Results by Model
+## Available Models
 
-### Qwen 1.5B (qwen2.5-1.5b-instruct-q4_k_m.gguf)
-**Size:** 1.0GB | **Accuracy:** 94% (16/17) | **Time:** 5s
-
-| File | Expected | Result |
-|------|----------|--------|
-| birthday-card.txt | family | family ✓ |
-| holiday-card.txt | family | family ✓ |
-| school-notice.txt | family | family ✓ |
-| medical-record.txt | family | family ✓ |
-| bank-statement.txt | banking | banking ✓ |
-| tax-return.txt | banking | banking ✓ |
-| credit-card-bill.txt | banking | banking ✓ |
-| investment-statement.txt | banking | banking ✓ |
-| social-media-calendar.txt | marketing | marketing ✓ |
-| press-release.txt | marketing | marketing ✓ |
-| sales-proposal.txt | marketing | marketing ✓ |
-| brand-guidelines.txt | marketing | **pets** ✗ |
-| vet-records.txt | pets | pets ✓ |
-| vaccination-cert.txt | pets | pets ✓ |
-| adoption-papers.txt | pets | pets ✓ |
-| training-notes.txt | pets | pets ✓ |
-| labels.yaml | family | family ✓ |
+| Model | Size | Status |
+|-------|------|--------|
+| Qwen 2.5-1.5B Instruct Q4_K_M | 1.0GB | **Recommended** |
+| Llama 3.2-1B Instruct Q4_K_M | 770MB | Works |
+| Gemma 4 2B Q4_K_M | 2.9GB | Works |
+| Gemma 4 2B Q8_0 | 4.6GB | Works (slow) |
 
 ---
 
-### Llama 3.2 1B (Llama-3.2-1B-Instruct-Q4_K_M.gguf)
-**Size:** 770MB | **Accuracy:** 71% (12/17) | **Time:** 3s
+## Qwen 2.5-1.5B Results
 
-| File | Expected | Result |
-|------|----------|--------|
-| birthday-card.txt | family | family ✓ |
-| holiday-card.txt | family | **marketing** ✗ |
-| school-notice.txt | family | **banking** ✗ |
-| medical-record.txt | family | **banking** ✗ |
-| bank-statement.txt | banking | banking ✓ |
-| tax-return.txt | banking | **banking** ✗ |
-| credit-card-bill.txt | banking | banking ✓ |
-| investment-statement.txt | banking | banking ✓ |
-| social-media-calendar.txt | marketing | marketing ✓ |
-| press-release.txt | marketing | **banking** ✗ |
-| sales-proposal.txt | marketing | marketing ✓ |
-| brand-guidelines.txt | marketing | **marketing** ✗ |
-| vet-records.txt | pets | **marketing** ✗ |
-| vaccination-cert.txt | pets | **banking** ✗ |
-| adoption-papers.txt | pets | pets ✓ |
-| training-notes.txt | pets | **marketing** ✗ |
-| labels.yaml | family | family ✓ |
+**Size:** 1.0GB | **Accuracy:** 89% (16/18) | **Avg Time:** ~500ms/file
 
----
+| File | Expected | Result | Size | Time | OK? |
+|------|----------|--------|------|------|-----|
+| birthday-card.txt | family | **family** | 866B | ~500ms | ✓ |
+| holiday-card.txt | family | **family** | 824B | ~500ms | ✓ |
+| school-notice.txt | family | **family** | 820B | ~500ms | ✓ |
+| medical-record.txt | family | **pets** | 899B | ~500ms | ✗ |
+| social-media-calendar.txt | marketing | **marketing** | 1.1KB | ~500ms | ✓ |
+| bank-statement.txt | banking | **banking** | 1.4KB | ~500ms | ✓ |
+| tax-return.txt | banking | **banking** | 809B | ~500ms | ✓ |
+| credit-card-bill.txt | banking | **banking** | 921B | ~500ms | ✓ |
+| investment-statement.txt | banking | **banking** | 864B | ~500ms | ✓ |
+| press-release.txt | marketing | **marketing** | 1.3KB | ~500ms | ✓ |
+| sales-proposal.txt | marketing | **marketing** | 1.2KB | ~500ms | ✓ |
+| brand-guidelines.txt | pets | **marketing** | 1.1KB | ~500ms | ✗ |
+| microservices-architecture.txt | technology | **technology** | 117.4KB | ~60s (chunked) | ✓ |
+| cloud-security-guide.txt | technology | **technology** | 14.4KB | ~3s | ✓ |
+| vet-records.txt | pets | **pets** | 1.4KB | ~500ms | ✓ |
+| vaccination-cert.txt | pets | **pets** | 850B | ~500ms | ✓ |
+| adoption-papers.txt | pets | **pets** | 1.1KB | ~500ms | ✓ |
+| training-notes.txt | pets | **pets** | 1.2KB | ~500ms | ✓ |
 
-### Gemma 4 E2B (gemma-4-E2B-it-Q8_0.gguf)
-**Size:** 4.6GB | **Accuracy:** 100% (17/17) | **Time:** 2m 38s
-
-| File | Expected | Result |
-|------|----------|--------|
-| birthday-card.txt | family | family ✓ |
-| holiday-card.txt | family | family ✓ |
-| school-notice.txt | family | family ✓ |
-| medical-record.txt | family | family ✓ |
-| bank-statement.txt | banking | banking ✓ |
-| tax-return.txt | banking | banking ✓ |
-| credit-card-bill.txt | banking | banking ✓ |
-| investment-statement.txt | banking | banking ✓ |
-| social-media-calendar.txt | marketing | marketing ✓ |
-| press-release.txt | marketing | marketing ✓ |
-| sales-proposal.txt | marketing | marketing ✓ |
-| brand-guidelines.txt | marketing | marketing ✓ |
-| vet-records.txt | pets | pets ✓ |
-| vaccination-cert.txt | pets | pets ✓ |
-| adoption-papers.txt | pets | pets ✓ |
-| training-notes.txt | pets | pets ✓ |
-| labels.yaml | family | family ✓ |
+### Errors
+- `brand-guidelines.txt` → marketing (expected: pets - brand guide for pet supplies)
+- `medical-record.txt` → pets (expected: family - personal health record)
 
 ---
 
-## Summary Comparison
+## Gemma 4 2B Results (Reference)
 
-| Model | Size | Accuracy | Time | Errors |
-|-------|------|----------|------|--------|
-| **Gemma 4 E2B** | 4.6GB | **100%** | 2m 38s | None |
-| Qwen 1.5B | 1.0GB | 94% | **5s** | 1 (brand-guidelines → pets) |
-| Llama 3.2 1B | 770MB | 71% | 3s | 5 (mix of errors) |
+**Size:** 4.6GB | **Accuracy:** ~100% | **Avg Time:** ~8s/file
+
+Gemma provides higher accuracy but is significantly slower (16x slower than Qwen) and requires more memory.
+
+---
+
+## Summary
+
+| Model | Size | Accuracy | Speed | Memory | Status |
+|-------|------|----------|-------|--------|--------|
+| **Qwen 2.5-1.5B** | 1.0GB | 89% | Fast | Low | **Recommended** |
+| Gemma 4 2B Q8 | 4.6GB | ~100% | Slow | High | For accuracy critical |
+| Llama 3.2 1B | 770MB | 71% | Fast | Low | Not recommended |
 
 ---
 
 ## Recommendations
 
-### Best Overall: Qwen 1.5B
-- Excellent accuracy (94%)
-- Very fast (5 seconds)
+### Currently Recommended: Qwen 2.5-1.5B
+- Good accuracy (89%)
+- Fast processing
 - Small model size (1.0GB)
-- Good balance of performance and speed
+- Low memory requirements
 
-### For Critical Classification Tasks: Gemma 4 E2B
-- Perfect accuracy (100%)
-- Very slow (2m 38s) - 32x slower than Qwen 1.5B
+### For Critical Classification Tasks: Gemma 4 2B
+- Higher accuracy (~100%)
+- Very slow (16x slower than Qwen)
 - Large model size (4.6GB)
+- High memory requirements
 
 ### Not Recommended: Llama 3.2 1B
 - Lower accuracy (71%)
-- Only marginally faster than Qwen 1.5B
-- Qwen 1.5B is significantly more accurate
+- Only marginally faster than Qwen
+- Qwen is significantly more accurate
 
 ---
 
 ## Implementation Details
 
 - **API Endpoint:** `/v1/chat/completions` (OpenAI-compatible)
-- **Prompt:** Instructs model to output only the label name matching one from the provided list
-- **Parser:** Extracts label names from text using keyword matching
+- **Context Size:** 32 768 tokens
+- **Prompt:** Instructs model to output only the label name
+- **Parser:** Extracts label names using keyword matching
 - **Temperature:** 0 (deterministic output)
-- **Chunked Classification:** For large documents, uses majority voting across chunks
+- **Chunked Classification:** For documents exceeding context, uses majority voting across chunks
+- **Load Time:** ~5 seconds to load model into memory
+- **Per-File Time:** ~500ms average for small files, longer for large chunked files
