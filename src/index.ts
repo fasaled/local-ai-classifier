@@ -16,6 +16,7 @@ interface StartCommand extends GlobalFlags {
 interface ClassifyCommand extends GlobalFlags {
   folder: string;
   labels: string;
+  model: string;
   force: boolean;
 }
 
@@ -89,19 +90,20 @@ Example:
 
 function printClassifyHelp(): void {
   console.log(`
-classify - Classify files in a folder
+classify - Classify files in a folder (starts server, classifies, stops)
 
 Usage:
-  classifier classify --folder <path> --labels <yaml>
+  classifier classify --folder <path> --labels <yaml> --model <path>
 
 Options:
   --folder, -f <path>   Path to the folder to process (required)
   --labels, -l <yaml>   Path to the YAML file with label definitions (required)
+  --model, -m <path>    Path to the LLM model file (required)
   --force               Reprocess files already classified by this tool
   --help, -h            Show this help message
 
 Example:
-  classifier classify --folder ./documents --labels labels.yaml
+  classifier classify --folder ./documents --labels labels.yaml --model models/qwen2.5-1.5b.gguf
 `);
 }
 
@@ -163,12 +165,14 @@ function parseCommand(args: string[]): Command | null {
       }
       const folderFlagIdx = remaining.findIndex((a) => a === "--folder" || a === "-f");
       const labelsFlagIdx = remaining.findIndex((a) => a === "--labels" || a === "-l");
+      const modelFlagIdx = remaining.findIndex((a) => a === "--model" || a === "-m");
       const nonFlagArgs = remaining.filter((a) => !a.startsWith("-"));
       return {
         cmd: "classify",
         args: {
-          folder: nonFlagArgs[0] || (folderFlagIdx !== -1 ? remaining[folderFlagIdx + 1] : "") || "",
+          folder: folderFlagIdx !== -1 ? remaining[folderFlagIdx + 1] : nonFlagArgs[0] || "",
           labels: labelsFlagIdx !== -1 ? remaining[labelsFlagIdx + 1] : "",
+          model: modelFlagIdx !== -1 ? remaining[modelFlagIdx + 1] : nonFlagArgs[1] || "",
           force: remaining.includes("--force"),
           help: flags.help,
         },
@@ -223,19 +227,17 @@ async function handleCommand(cmd: Command): Promise<void> {
     }
 
     case "classify": {
-      if (!cmd.args.folder || !cmd.args.labels) {
-        console.error("Error: --folder and --labels are required");
-        console.error("Usage: classifier classify --folder <path> --labels <yaml>");
+      if (!cmd.args.folder || !cmd.args.labels || !cmd.args.model) {
+        console.error("Error: --folder, --labels, and --model are required");
+        console.error("Usage: classifier classify --folder <path> --labels <yaml> --model <path>");
         printClassifyHelp();
         process.exit(1);
       }
 
-      const serverRunning = await isServerRunning();
-      if (!serverRunning) {
-        console.error("Error: Server not running.");
-        console.error("Run 'classifier start --model <path>' first.");
-        process.exit(1);
-      }
+      const modelLoadStart = Date.now();
+      console.log("Loading model (this may take a minute)...\n");
+      await startServer(cmd.args.model);
+      const modelLoadTime = Date.now() - modelLoadStart;
 
       console.log("Loading labels...");
       const labels = await loadLabels(cmd.args.labels);
@@ -243,7 +245,7 @@ async function handleCommand(cmd: Command): Promise<void> {
 
       console.log("Scanning folder...");
       const files = scanFolder(cmd.args.folder);
-      console.log(`Found ${files.length} text files`);
+      console.log(`Found ${files.length} text files\n`);
 
       const startTime = new Date();
       const summary: ProcessingSummary = {
@@ -269,10 +271,11 @@ async function handleCommand(cmd: Command): Promise<void> {
         }
       }
 
-      summary.totalTime = Math.floor((Date.now() - startTime.getTime()) / 1000);
+      const processTime = Date.now() - startTime.getTime();
+      summary.totalTime = Math.floor((modelLoadTime + processTime) / 1000);
       logSummary(summary);
 
-      console.log("\nServer still running. Run 'classifier stop' to unload when done.");
+      await stopServer();
       break;
     }
 

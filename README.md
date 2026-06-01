@@ -25,36 +25,84 @@ The process is non-destructive: it never moves, renames, or modifies file conten
 
 ---
 
+## Prerequisites
+
+- **macOS** (ARM64 or Intel)
+- **Bun** installed (`brew install bun`)
+
+---
+
 ## Installation
 
-1. Download the `classifier-dist/` folder or clone the repository
-2. Ensure you have a GGUF model file (e.g., Qwen 2.5-1.5B)
-3. Start the server with the model path
+```bash
+# Install dependencies and build (llama-server downloads automatically)
+bun install
+bun run build
+```
 
-No additional installation required - the tool is self-contained.
+The build process:
+1. Downloads pre-built llama-server binaries via `prebuild` script
+2. Compiles the CLI into a standalone executable
+
+### Downloaded artifacts
+
+```
+bin/
+├── llama-server         # llama.cpp server binary
+├── libllama*.dylib      # llama shared libraries
+├── libggml*.dylib       # ggml shared libraries
+└── libmtmd*.dylib       # mtmd shared libraries
+```
+
+### Manual download
+
+If you need to update llama-server manually:
+```bash
+bun run scripts/download-llama.ts
+```
 
 ---
 
 ## Quick Start
 
 ```bash
-# 1. Start the server and load model
-./classifier start --model /path/to/model.gguf
+# Install dependencies
+bun install
 
-# 2. Classify files
-./classifier classify --folder /path/to/folder --labels labels.yaml
+# Build (downloads llama-server automatically)
+bun run build
 
-# 3. Stop the server when done
-./classifier stop
+# Download a model
+mkdir -p models
+# Download from HuggingFace, e.g.:
+# Qwen 2.5-1.5B: https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF
+
+# Run classification
+./classifier classify --folder /path/to/folder --labels labels.yaml --model models/qwen2.5-1.5b-instruct-q4_k_m.gguf
 ```
 
-### All-in-one command
+**Example output:**
+```
+Loading model (this may take a minute)...
 
-```bash
-# Starts server, classifies, stops server automatically
-./classifier start --model /path/to/model.gguf && \
-./classifier classify --folder /path/to/folder --labels labels.yaml && \
-./classifier stop
+Model loaded and ready.
+Loading labels...
+Loaded 5 labels: family, banking, marketing, technology, pets
+Scanning folder...
+Found 9 text files
+
+[00:00] OK     adoption-papers.txt          → pets
+[00:00] OK     vet-records.txt              → pets
+[00:00] OK     school-notice.txt            → family
+...
+──────────────────────────────────────────
+Processed:             9 files
+  Tagged:              9
+  No label:            0  (no matching label)
+Skipped:               0  (already classified)
+Total time:            3s
+──────────────────────────────────────────
+llama-server stopped.
 ```
 
 ---
@@ -62,37 +110,29 @@ No additional installation required - the tool is self-contained.
 ## Usage
 
 ```bash
-# Start server (load model once)
-./classifier start --model /path/to/model.gguf
-
-# Run multiple classifications (model stays in memory)
-./classifier classify --folder /path/to/folder1 --labels labels.yaml
-./classifier classify --folder /path/to/folder2 --labels labels.yaml
+# Classify files (model loads and unloads automatically)
+./classifier classify --folder /path/to/folder --labels labels.yaml --model models/qwen2.5-1.5b-instruct-q4_k_m.gguf
 
 # Force reprocess all files
-./classifier classify --folder /path/to/folder --labels labels.yaml --force
+./classifier classify --folder /path/to/folder --labels labels.yaml --model models/qwen2.5-1.5b-instruct-q4_k_m.gguf --force
 
 # List tags for files
 ./classifier list-tags /path/to/folder
 
 # Remove AI tags from files
 ./classifier remove-tags /path/to/folder
-
-# Stop server (unload model)
-./classifier stop
 ```
 
 ### Parameters
 
 | Parameter | Description |
 |---|---|
-| `start --model <path>` | Start llama-server and load model |
 | `classify --folder <path>` | Path to the folder to process |
 | `classify --labels <yaml>` | Path to the YAML file with label definitions |
+| `classify --model <path>` | Path to the GGUF model file |
 | `classify --force` | Reprocess files already classified |
 | `list-tags <path>` | List tags for all files in a folder |
 | `remove-tags <path>` | Remove AI tags from all files in a folder |
-| `stop` | Stop llama-server and unload model |
 
 ---
 
@@ -193,9 +233,9 @@ Loaded 5 labels: family, banking, marketing, technology, pets
 Scanning folder...
 Found 9 text files
 
-[00:01]  OK     adoption-papers.txt       → pets       1.1KB   572ms   qwen2.5-1.5b-instruct-q4_k_m.gguf
-[00:02]  OK     vet-records.txt           → pets       1.4KB   875ms   qwen2.5-1.5b-instruct-q4_k_m.gguf
-[00:02]  OK     school-notice.txt         → family     820B    684ms   qwen2.5-1.5b-instruct-q4_k_m.gguf
+[00:01]  OK     adoption-papers.txt       → pets       1.1KB   572ms
+[00:02]  OK     vet-records.txt           → pets       1.4KB   875ms
+[00:02]  OK     school-notice.txt         → family     820B    684ms
 ...
 ──────────────────────────────────────────
 Processed:             9 files
@@ -204,8 +244,7 @@ Processed:             9 files
 Skipped:               0  (already classified)
 Total time:            6s
 ──────────────────────────────────────────
-
-Server still running. Run 'classifier stop' to unload when done.
+llama-server stopped.
 ```
 
 ### Log columns
@@ -218,7 +257,6 @@ Server still running. Run 'classifier stop' to unload when done.
 | Label | Classification result |
 | Size | File size (B, KB, or MB) |
 | Time | Processing time for this file |
-| Model | Model filename |
 
 ---
 
@@ -233,17 +271,18 @@ Server still running. Run 'classifier stop' to unload when done.
 
 ---
 
-## Building
+## Updating llama-server
+
+To update to a new version of llama-server:
 
 ```bash
-# Install dependencies
-bun install
+bun run scripts/download-llama.ts
+```
 
-# Run directly
-bun run src/index.ts --help
-
-# Build standalone executable
-bun build --compile --outfile classifier src/index.ts
+To rebuild from scratch:
+```bash
+rm -rf bin/llama-server bin/*.dylib
+bun run scripts/download-llama.ts
 ```
 
 ---
@@ -253,7 +292,6 @@ bun build --compile --outfile classifier src/index.ts
 - Processes plain text files only (`.txt`, `.md`, `.csv`, `.json`, `.yaml`, `.xml`)
 - Does not process PDFs, images, binary files, or Office documents
 - Requires macOS (Finder tags are macOS-specific)
-- Requires llama-server binary in `bin/` directory or in PATH
 
 ---
 

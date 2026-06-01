@@ -1,14 +1,14 @@
-# Family - Documents about family life, personal events, home, children, relationships
-family: "Family documents including personal letters, birthday cards, family photos descriptions, home videos notes, school documents, medical records, insurance policies"
+# Family - Personal documents about family life, home, and health
+family: "Personal family documents including personal letters, birthday cards, family photos descriptions, home videos notes, school documents, medical records, insurance policies"
 
-# Banking - Financial documents, bank statements, investment reports, tax documents, credit card statements
+# Banking - Financial documents, bank statements, investment reports
 banking: "Banking and financial documents including account statements, investment portfolios, tax returns, credit card bills, loan applications, ATM receipts"
 
-# Marketing - Sales proposals, advertising materials, brand guidelines, social media content, press releases, market research
-marketing: "Marketing and sales documents including proposals, brochures, brand guidelines, social media posts, press releases, market analysis"
+# Marketing - Sales proposals, advertising materials, social media content, press releases
+marketing: "Marketing and sales documents including sales proposals, brochures, social media posts, press releases, market analysis, advertising materials"
 
-# Technology - Technical documentation, software architecture, programming guides, system design, IT documentation
+# Technology - Technical documentation, software architecture, system design, IT documentation
 technology: "Technology documents including software architecture, programming guides, system design, technical documentation, API specifications, security guides"
 
-# Pets - Pet records, veterinary reports, pet care instructions, pet adoption papers, pet insurance
-pets: "Pet-related documents including veterinary records, vaccination certificates, pet care guides, adoption papers, pet insurance, training notes"
+# Pets - Pet records, veterinary reports, pet care, training
+pets: "Pet-related documents including veterinary records, vaccination certificates, pet care guides, adoption papers, pet insurance, pet training notes, pet health records"
