@@ -88,9 +88,6 @@ function clearServerInfo(): void {
 }
 
 export async function startServer(modelPath: string, port: number = 8080): Promise<string> {
-  await stopServer();
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-
   const llamaServer = await findLlamaServer();
   if (!llamaServer) {
     throw new Error("llama-server not found in bin/ directory");

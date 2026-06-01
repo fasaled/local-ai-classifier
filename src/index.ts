@@ -209,6 +209,8 @@ async function handleCommand(cmd: Command): Promise<void> {
         process.exit(1);
       }
       try {
+        await stopServer();
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         await startServer(cmd.args.model);
         console.log("Server running. Model loaded.");
         console.log("Run 'classifier classify --folder <path> --labels <yaml>' to classify files.");
