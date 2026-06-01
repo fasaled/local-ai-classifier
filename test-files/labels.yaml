@@ -7,5 +7,8 @@ banking: "Banking and financial documents including account statements, investme
 # Marketing - Sales proposals, advertising materials, brand guidelines, social media content, press releases, market research
 marketing: "Marketing and sales documents including proposals, brochures, brand guidelines, social media posts, press releases, market analysis"
 
+# Technology - Technical documentation, software architecture, programming guides, system design, IT documentation
+technology: "Technology documents including software architecture, programming guides, system design, technical documentation, API specifications, security guides"
+
 # Pets - Pet records, veterinary reports, pet care instructions, pet adoption papers, pet insurance
 pets: "Pet-related documents including veterinary records, vaccination certificates, pet care guides, adoption papers, pet insurance, training notes"
