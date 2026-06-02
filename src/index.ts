@@ -33,42 +33,35 @@ function printHelp(): void {
 File Classifier CLI - Tag files using a local LLM
 
 Usage:
-  classifier start --model <path>         Start server and load model
   classifier classify [options]           Classify files in a folder
-  classifier stop                        Stop server and unload model
-  classifier list-tags <path>             List tags for files in a folder
-  classifier remove-tags <path>           Remove AI tags from files in a folder
-  classifier help                         Show this help message
+  classifier list-tags <path>              List tags for files in a folder
+  classifier remove-tags <path>            Remove AI tags from files in a folder
+  classifier help                          Show this help message
 
 Commands:
-  start <options>      Start llama-server and load a model
-    --model, -m         Path to the GGUF model file (required)
-    --help, -h          Show help for this command
-
   classify [options]    Classify files in a folder
     --folder, -f        Path to the folder to process (required)
-    --labels, -l        Path to the YAML file with label definitions (required)
+    --labels, -l         Path to the YAML file with label definitions (required)
+    --model, -m         Path to the GGUF model file (required)
     --force             Reprocess files already classified
     --help, -h          Show help for this command
 
-  stop                  Stop llama-server and unload model
-
   list-tags <path>      List tags for all files in a folder
 
-  remove-tags <path>   Remove AI tags from all files in a folder
+  remove-tags <path>    Remove AI tags from all files in a folder
 
 Examples:
-  # Start server with a model
-  classifier start --model /path/to/model.gguf
-
-  # Classify files (server must be running)
-  classifier classify --folder ./docs --labels labels.yaml
+  # Classify files (model loads and unloads automatically)
+  classifier classify --folder ./docs --labels labels.yaml --model model.gguf
 
   # Force reprocess all files
-  classifier classify --folder ./docs --labels labels.yaml --force
+  classifier classify --folder ./docs --labels labels.yaml --model model.gguf --force
 
-  # Stop server when done
-  classifier stop
+  # List tags
+  classifier list-tags ./docs
+
+  # Remove AI tags
+  classifier remove-tags ./docs
 `);
 }
 
