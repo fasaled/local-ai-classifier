@@ -17,7 +17,7 @@ The process is non-destructive: it never moves, renames, or modifies file conten
 | Component | Technology |
 |---|---|
 | Runtime / bundler | Bun |
-| LLM inference | llama.cpp (llama-server) |
+| LLM inference | [llama-server](https://github.com/ggerganov/llama.cpp) (HTTP API, OpenAI-compatible) |
 | Model | Qwen 2.5-1.5B (GGUF) |
 | macOS tagging | `xattr` (native extended attributes) |
 | Configuration | YAML |
@@ -283,6 +283,58 @@ llama-server stopped.
 | Label | Classification result |
 | Size | File size (B, KB, or MB) |
 | Time | Processing time for this file |
+
+---
+
+## Inference Server (llama-server)
+
+Inference is performed by **[llama-server](https://github.com/ggerganov/llama.cpp)**, the official HTTP server from the llama.cpp project.
+
+### Why llama-server
+
+- **Mature and stable** — battle-tested C++ server used by many production systems
+- **OpenAI-compatible API** — standard `/v1/chat/completions` endpoint
+- **No native compilation** — pre-built binary downloaded by the build process
+- **Metal GPU support** — leverages Apple Silicon GPU out of the box
+- **Process isolation** — model runs in a separate process, easy to manage lifecycle
+
+### Lifecycle
+
+The classifier manages llama-server as a child process:
+
+1. **Start** — `startServer(modelPath)` spawns `llama-server` with the model loaded into memory
+2. **Health check** — polls `/health` until the server reports ready
+3. **Classify** — sends chat completion requests per file
+4. **Stop** — `stopServer()` sends SIGTERM and waits for clean exit
+
+### Startup
+
+```bash
+llama-server -m model.gguf -c 32768 --port 8080 --log-disable --parallel 1
+```
+
+| Flag | Purpose |
+|------|---------|
+| `-m` | Path to the GGUF model file |
+| `-c` | Context window size (32 768 tokens) |
+| `--port` | HTTP port (default: 8080) |
+| `--log-disable` | Suppress verbose llama.cpp logs |
+| `--parallel` | Max concurrent requests (1 keeps things simple) |
+
+### API used
+
+```
+POST http://localhost:8080/v1/chat/completions
+Content-Type: application/json
+
+{
+  "messages": [{ "role": "user", "content": "..." }],
+  "temperature": 0,
+  "max_tokens": 16
+}
+```
+
+The model is prompted to respond with a single label name. The classifier extracts the label from the response and applies the Finder tag.
 
 ---
 
