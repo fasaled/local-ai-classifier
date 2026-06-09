@@ -116,6 +116,9 @@ llama-server stopped.
 # Force reprocess all files
 ./classifier classify --folder /path/to/folder --labels labels.yaml --model models/qwen2.5-1.5b-instruct-q4_k_m.gguf --force
 
+# Watch folder and auto-classify new files
+./classifier classify --folder /path/to/folder --labels labels.yaml --model models/qwen2.5-1.5b-instruct-q4_k_m.gguf --watch
+
 # List tags for files
 ./classifier list-tags /path/to/folder
 
@@ -131,6 +134,7 @@ llama-server stopped.
 | `classify --labels <yaml>` | Path to the YAML file with label definitions |
 | `classify --model <path>` | Path to the GGUF model file |
 | `classify --force` | Reprocess files already classified |
+| `classify --watch` | Keep server running and auto-classify new files (Ctrl+C to stop) |
 | `list-tags <path>` | List tags for all files in a folder |
 | `remove-tags <path>` | Remove AI tags from all files in a folder |
 
@@ -193,6 +197,28 @@ Tags are written to the file's extended attributes via `xattr`:
 - The reserved tag `ai-classified` as a processing marker
 
 Tags are immediately visible in macOS Finder.
+
+---
+
+## Watch Mode
+
+Use the `--watch` flag to keep the server running and auto-classify any new file added to the folder.
+
+```bash
+./classifier classify --folder ./inbox --labels labels.yaml --model model.gguf --watch
+```
+
+Behavior:
+- Model is loaded once and stays in memory
+- New or modified text files in the folder are classified automatically
+- Files with the `ai-classified` tag are skipped (use `--force` to reprocess)
+- Debounce: 750ms to avoid duplicate classifications
+- Stop with `Ctrl+C` (SIGINT) — server unloads cleanly
+
+Use cases:
+- **Email-style inbox** — drop files into a watched folder for hands-off tagging
+- **CI/CD integration** — process files as they land in a staging area
+- **Workflow automation** — chain with any tool that produces text files
 
 ---
 

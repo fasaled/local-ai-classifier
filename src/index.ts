@@ -3,6 +3,7 @@ import { loadLabels, processFile } from "./classifier.ts";
 import { logProgress, logSummary } from "./logger.ts";
 import { startServer, stopServer, isServerRunning } from "./llm.ts";
 import { getAllTags, removeOwnTags, hasAIClassifiedTag } from "./xattr.ts";
+import { watchFolder } from "./watcher.ts";
 import type { ProcessingSummary } from "./types.ts";
 
 interface GlobalFlags {
@@ -18,6 +19,7 @@ interface ClassifyCommand extends GlobalFlags {
   labels: string;
   model: string;
   force: boolean;
+  watch: boolean;
 }
 
 type Command =
@@ -44,6 +46,7 @@ Commands:
     --labels, -l         Path to the YAML file with label definitions (required)
     --model, -m         Path to the GGUF model file (required)
     --force             Reprocess files already classified
+    --watch, -w         Keep server running and auto-classify new files
     --help, -h          Show help for this command
 
   list-tags <path>      List tags for all files in a folder
@@ -56,6 +59,9 @@ Examples:
 
   # Force reprocess all files
   classifier classify --folder ./docs --labels labels.yaml --model model.gguf --force
+
+  # Watch folder for new files and classify automatically
+  classifier classify --folder ./docs --labels labels.yaml --model model.gguf --watch
 
   # List tags
   classifier list-tags ./docs
@@ -87,16 +93,19 @@ classify - Classify files in a folder (starts server, classifies, stops)
 
 Usage:
   classifier classify --folder <path> --labels <yaml> --model <path>
+  classifier classify --folder <path> --labels <yaml> --model <path> --watch
 
 Options:
   --folder, -f <path>   Path to the folder to process (required)
   --labels, -l <yaml>   Path to the YAML file with label definitions (required)
   --model, -m <path>    Path to the LLM model file (required)
   --force               Reprocess files already classified by this tool
+  --watch, -w           Keep server running and auto-classify new files
   --help, -h            Show this help message
 
-Example:
+Examples:
   classifier classify --folder ./documents --labels labels.yaml --model models/qwen2.5-1.5b.gguf
+  classifier classify --folder ./documents --labels labels.yaml --model models/qwen2.5-1.5b.gguf --watch
 `);
 }
 
@@ -167,6 +176,7 @@ function parseCommand(args: string[]): Command | null {
           labels: labelsFlagIdx !== -1 ? remaining[labelsFlagIdx + 1] : "",
           model: modelFlagIdx !== -1 ? remaining[modelFlagIdx + 1] : nonFlagArgs[1] || "",
           force: remaining.includes("--force"),
+          watch: remaining.includes("--watch") || remaining.includes("-w"),
           help: flags.help,
         },
       };
@@ -268,7 +278,34 @@ async function handleCommand(cmd: Command): Promise<void> {
       summary.totalTime = Math.floor((modelLoadTime + processTime) / 1000);
       logSummary(summary);
 
-      await stopServer();
+      if (cmd.args.watch) {
+        const ac = new AbortController();
+        const watcher = await watchFolder({
+          folder: cmd.args.folder,
+          debounceMs: 750,
+          signal: ac.signal,
+          onFile: async (filePath) => {
+            const r = await processFile(filePath, labels, cmd.args.force);
+            logProgress(r, new Date(), labels);
+          },
+        });
+
+        console.log(`\nWatching ${cmd.args.folder} for new files... (Ctrl+C to stop)\n`);
+
+        const shutdown = async () => {
+          console.log("\nStopping watcher...");
+          ac.abort();
+          try { watcher.close(); } catch {}
+          await stopServer();
+          process.exit(0);
+        };
+        process.on("SIGINT", shutdown);
+        process.on("SIGTERM", shutdown);
+
+        await new Promise(() => {});
+      } else {
+        await stopServer();
+      }
       break;
     }
 
