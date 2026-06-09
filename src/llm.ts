@@ -95,8 +95,6 @@ export async function startServer(modelPath: string, port: number = 8080): Promi
 
   const binDir = getBinDir();
 
-  console.log("Loading model (this may take a minute)...\n");
-
   const args = [
     "-m", modelPath,
     "-c", String(MAX_CONTEXT),
