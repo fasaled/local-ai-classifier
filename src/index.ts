@@ -1,17 +1,13 @@
 import { scanFolder } from "./file-scanner.ts";
 import { loadLabels, processFile } from "./classifier.ts";
 import { logProgress, logSummary } from "./logger.ts";
-import { startServer, stopServer, isServerRunning } from "./llm.ts";
+import { startServer, stopServer } from "./llm.ts";
 import { getAllTags, removeOwnTags, hasAIClassifiedTag } from "./xattr.ts";
 import { watchFolder } from "./watcher.ts";
 import type { ProcessingSummary } from "./types.ts";
 
 interface GlobalFlags {
   help: boolean;
-}
-
-interface StartCommand extends GlobalFlags {
-  model: string;
 }
 
 interface ClassifyCommand extends GlobalFlags {
@@ -23,9 +19,7 @@ interface ClassifyCommand extends GlobalFlags {
 }
 
 type Command =
-  | { cmd: "start"; args: StartCommand }
   | { cmd: "classify"; args: ClassifyCommand }
-  | { cmd: "stop" }
   | { cmd: "list-tags"; folder: string }
   | { cmd: "remove-tags"; folder: string }
   | { cmd: "help" };
@@ -68,22 +62,6 @@ Examples:
 
   # Remove AI tags
   classifier remove-tags ./docs
-`);
-}
-
-function printStartHelp(): void {
-  console.log(`
-start - Start llama-server and load a model
-
-Usage:
-  classifier start --model <path>
-
-Options:
-  --model, -m <path>    Path to the GGUF model file (required)
-  --help, -h            Show this help message
-
-Example:
-  classifier start --model ./models/llama.gguf
 `);
 }
 
@@ -142,23 +120,6 @@ function parseCommand(args: string[]): Command | null {
     case "-h":
       return { cmd: "help" };
 
-    case "start": {
-      const { flags, remaining } = parseGlobalFlags(args.slice(1));
-      if (flags.help) {
-        return { cmd: "help" };
-      }
-      const modelArgs = remaining.filter((a) => !a.startsWith("-"));
-      const modelFlagIdx = remaining.findIndex((a) => a === "--model" || a === "-m");
-      let model = modelArgs[0];
-      if (!model && modelFlagIdx !== -1 && remaining[modelFlagIdx + 1]) {
-        model = remaining[modelFlagIdx + 1];
-      }
-      return {
-        cmd: "start",
-        args: { model: model || "", help: flags.help },
-      };
-    }
-
     case "classify":
     case "-c": {
       const { flags, remaining } = parseGlobalFlags(args.slice(1));
@@ -182,9 +143,6 @@ function parseCommand(args: string[]): Command | null {
       };
     }
 
-    case "stop":
-      return { cmd: "stop" };
-
     case "list-tags": {
       const nonFlag = args.slice(1).filter((a) => !a.startsWith("-"));
       return { cmd: "list-tags", folder: nonFlag[0] || "" };
@@ -207,27 +165,6 @@ async function handleCommand(cmd: Command): Promise<void> {
     case "help":
       printHelp();
       break;
-
-    case "start": {
-      if (!cmd.args.model) {
-        console.error("Error: --model is required");
-        console.error("Usage: classifier start --model <path>");
-        printStartHelp();
-        process.exit(1);
-      }
-      try {
-        await stopServer();
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        await startServer(cmd.args.model);
-        console.log("Server running. Model loaded.");
-        console.log("Run 'classifier classify --folder <path> --labels <yaml>' to classify files.");
-        console.log("Run 'classifier stop' to unload the model.");
-      } catch (e) {
-        console.error("Error starting server:", e instanceof Error ? e.message : e);
-        process.exit(1);
-      }
-      break;
-    }
 
     case "classify": {
       if (!cmd.args.folder || !cmd.args.labels || !cmd.args.model) {
@@ -308,15 +245,6 @@ async function handleCommand(cmd: Command): Promise<void> {
       }
       break;
     }
-
-    case "stop":
-      try {
-        await stopServer();
-      } catch (e) {
-        console.error("Error stopping server:", e instanceof Error ? e.message : e);
-        process.exit(1);
-      }
-      break;
 
     case "list-tags": {
       if (!cmd.folder) {

@@ -119,37 +119,91 @@ llama-server stopped.
 
 ## Usage
 
-```bash
-# Classify files (model loads and unloads automatically)
-./classifier classify --folder ./docs --labels labels.yaml --model models/qwen2.5-1.5b-instruct-q4_k_m.gguf
+The CLI exposes three commands plus `help`:
 
-# Force reprocess all files
-./classifier classify --folder ./docs --labels labels.yaml --model model.gguf --force
-
-# Watch folder and auto-classify new files
-./classifier classify --folder ./docs --labels labels.yaml --model model.gguf --watch
-
-# List tags for files
-./classifier list-tags ./docs
-
-# Remove AI tags from files
-./classifier remove-tags ./docs
-
-# Show help
-./classifier help
-```
-
-### Parameters
-
-| Parameter | Description |
+| Command | Description |
 |---|---|
-| `classify --folder <path>` | Path to the folder to process |
-| `classify --labels <yaml>` | Path to the YAML file with label definitions |
-| `classify --model <path>` | Path to the GGUF model file |
-| `classify --force` | Reprocess files already classified |
-| `classify --watch` | Keep server running and auto-classify new files (Ctrl+C to stop) |
+| `classify [options]` | Classify files in a folder (starts server, classifies, stops) |
 | `list-tags <path>` | List tags for all files in a folder |
 | `remove-tags <path>` | Remove AI tags from all files in a folder |
+| `help` | Show the command list |
+
+The inference server is managed automatically: `classify` starts `llama-server` and loads the model at the beginning of each run, then stops it when classification finishes (or on `Ctrl+C` in watch mode). There is no manual start/stop command.
+
+### `classify` — Classify files
+
+Runs the full pipeline: starts the inference server, loads the model, classifies every text file in the folder, then stops the server (unless `--watch` is set).
+
+```bash
+classifier classify --folder <path> --labels <yaml> --model <path> [options]
+```
+
+| Option | Description |
+|---|---|
+| `--folder`, `-f <path>` | Folder to process (required) |
+| `--labels`, `-l <yaml>` | YAML file with label definitions (required) |
+| `--model`, `-m <path>` | GGUF model file (required) |
+| `--force` | Reprocess files already tagged (deletes the existing `ai-classified-labels` xattr) |
+| `--watch`, `-w` | Keep the server running and auto-classify new or modified files (see [Watch Mode](#watch-mode)) |
+| `--help`, `-h` | Show help for `classify` |
+
+Examples:
+
+```bash
+# Standard run — model loads and unloads automatically
+./classifier classify \
+  --folder ./docs \
+  --labels labels.yaml \
+  --model models/qwen2.5-1.5b-instruct-q4_k_m.gguf
+
+# Reprocess every file (ignore the ai-classified marker)
+./classifier classify \
+  --folder ./docs \
+  --labels labels.yaml \
+  --model models/qwen2.5-1.5b-instruct-q4_k_m.gguf \
+  --force
+
+# Watch the folder and classify new files as they appear (Ctrl+C to stop)
+./classifier classify \
+  --folder ./inbox \
+  --labels labels.yaml \
+  --model models/qwen2.5-1.5b-instruct-q4_k_m.gguf \
+  --watch
+```
+
+### `list-tags` — Inspect existing tags
+
+```bash
+./classifier list-tags ./docs
+```
+
+Reads the `ai-classified-labels` xattr on every text file in the folder and prints one line per file:
+
+```
+adoption-papers.txt                    → pets
+vet-records.txt                        → pets
+school-notice.txt                      → family
+notes.txt                              → (no tags)
+```
+
+Files with no tags at all are listed as `(no tags)`.
+
+### `remove-tags` — Strip AI tags
+
+```bash
+./classifier remove-tags ./docs
+```
+
+Deletes only the `ai-classified` and `ai-classified-labels` xattrs the tool itself wrote. Other xattrs (including any user-added ones) are preserved. Files without AI tags are listed as `(no AI tags to remove)`.
+
+### `help`
+
+```bash
+./classifier help
+./classifier classify --help
+```
+
+Prints the command list. `classify` also accepts `--help` for its own option reference.
 
 ---
 
