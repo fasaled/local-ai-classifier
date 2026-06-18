@@ -1,14 +1,51 @@
-# Family - Personal documents about family life, home, and health
-family: "Personal family documents including personal letters, birthday cards, family photos descriptions, home videos notes, school documents, medical records, insurance policies"
+# Classification rule: each document is assigned the label of its PRIMARY
+# SUBJECT MATTER, not its document format. A press release about a board
+# appointment is corporate-governance (the subject), not marketing (the
+# format). An HR memo about expense policy is banking (the subject of the
+# policy), not labor-relations (the department of origin). The categories
+# below are mutually exclusive on the subject axis.
 
-# Banking - Financial documents, bank statements, investment reports
-banking: "Banking and financial documents including account statements, investment portfolios, tax returns, credit card bills, loan applications, ATM receipts"
+# Personal and family life. Subject = the personal, family, or household
+# sphere. Includes personal communication, social events, individual
+# workplace matters of a personal nature, and personal development.
+family: "Personal and family life documents, including personal letters and emails, birthday and holiday cards, household social invitations, school notices about children, family medical records, household insurance, personal development conversations, and individual workplace complaints of a personal nature"
 
-# Marketing - Sales proposals, advertising materials, social media content, press releases
-marketing: "Marketing and sales documents including sales proposals, brochures, social media posts, press releases, market analysis, advertising materials"
+# Money, financial transactions, accounting, expense policies, and
+# financial reporting. Subject = financial information, regardless of
+# the issuing department (HR, finance, legal, operations).
+banking: "Financial and accounting documents, including bank statements, investment reports, tax returns, credit card bills, loan applications, ATM receipts, expense reimbursement policies, corporate financial reports, and shareholder letters focused on financial results and dividend distribution"
 
-# Technology - Technical documentation, software architecture, system design, IT documentation
-technology: "Technology documents including software architecture, programming guides, system design, technical documentation, API specifications, security guides"
+# Promoting a product, brand, or service to an external audience.
+# Subject = an external audience being persuaded. Excludes documents
+# whose primary subject is corporate governance, labor relations, or
+# any other category, even if they are written in press-release form.
+marketing: "Documents whose primary purpose is to promote a product, brand, or service to an external audience, including press releases for product launches, social media calendars, advertising materials, market analysis reports, brand guidelines, and sales proposals to potential customers"
 
-# Pets - Pet records, veterinary reports, pet care, training
-pets: "Pet-related documents including veterinary records, vaccination certificates, pet care guides, adoption papers, pet insurance, pet training notes, pet health records"
+# Software, engineering, and technical operations. Subject = a
+# technical artefact, system, incident, or skill.
+technology: "Technology and engineering documents, including software architecture, programming guides, system design, technical documentation, API specifications, security guides, technical incident investigation reports, engineering training material, and technical career development"
+
+# Pet ownership, pet care, and animal-related services. Subject = an
+# animal or pet-related service. Excludes documents about a company
+# that sells pet products unless the subject is a specific animal.
+pets: "Documents about pet ownership, pet care, and animal-related services, including veterinary records, vaccination certificates, pet adoption papers, pet insurance, pet care guides, and pet training notes for a specific animal"
+
+# Internal governance of a corporation. Subject = a governance body
+# or governance procedure (board, executive committee, shareholders,
+# bylaws, auditor). Includes press releases and public statements
+# about governance events.
+corporate-governance: "Documents about the internal governance of a corporation, including board of directors minutes, executive committee sessions, board appointments and resignations, bylaws and amendments, shareholder meeting materials, statutory auditor communications, and press releases or public statements announcing governance events"
+
+# Collective labor relations. Subject = collective worker
+# representation, collective agreements, or industry-wide labor
+# trends. Excludes individual workplace matters, which are family.
+labor-relations: "Documents about collective labor relations, including union meetings, collective bargaining negotiations, workers' council sessions, union grievance procedures, labor disputes, collective agreements, strike notices, and industry-wide analysis of labor and unionization trends"
+
+# Pedro and Juan together in a business travel context. Subject = a
+# business trip involving both Pedro and Juan.
+pedro-juan-business-trip: "Documents in which Pedro and Juan are mentioned together in the context of business travel, including client visits, industry conferences, trade fairs, sales trips, international meetings, on-site negotiations, flight and hotel arrangements for work, expense reports for business trips, and agendas of professional trips"
+
+# Pedro and Juan together in a creative cooking context at a
+# restaurant. Subject = restaurant kitchen creativity involving both
+# Pedro and Juan.
+pedro-juan-creative-cooking: "Documents in which Pedro and Juan are mentioned together in the context of creative cooking at a restaurant, including new menu development, recipe experimentation, kitchen brigade coordination, tasting sessions, gastronomic creativity, plating techniques, and chef collaborations in a restaurant kitchen"

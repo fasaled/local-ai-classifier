@@ -1,5 +1,5 @@
 import { Label, ClassificationResult } from "./types.ts";
-import { classify, classifyChunked, EFFECTIVE_LIMIT } from "./llm.ts";
+import { classify, classifyChunked, EFFECTIVE_LIMIT, type ProgressCallback } from "./llm.ts";
 
 export interface ContextStrategyResult {
   result: ClassificationResult | null;
@@ -17,19 +17,21 @@ export async function determineStrategy(
     modified: Date;
     existingTags: string[];
   },
-  labels: Label[]
+  labels: Label[],
+  onProgress?: ProgressCallback
 ): Promise<ContextStrategyResult> {
   const tokenCount = Math.ceil(content.length / 4);
 
   if (tokenCount <= EFFECTIVE_LIMIT) {
-    const result = await classify(content, metadata, labels);
+    const result = await classify(content, metadata, labels, onProgress);
     return { result };
   }
 
   const { result, chunks, calls } = await classifyChunked(
     content,
     metadata,
-    labels
+    labels,
+    onProgress
   );
   return { result, chunks, calls };
 }

@@ -1,0 +1,73 @@
+1:1 MEETING NOTES
+
+Date:    April 9, 2024
+Manager: Lucia Calderon, Senior Product Manager
+Report:  Tomas Iriarte, Software Engineer L4
+Duration: 45 minutes
+Location: Meeting room "Aconcagua", 7th floor (informal layout)
+Format:   1:1, no fixed agenda
+
+Personal check-in
+
+L: How are you doing? It's been a busy sprint, I want to make sure
+   you're okay before we get into project stuff.
+
+T: I'm fine, thanks. The last couple of weeks have been heavy at
+   home - my dad had a small surgery two weeks ago and I've been
+   helping my mum with logistics around the hospital. He's
+   recovering well now, so things are calming down.
+
+L: I'm glad to hear it. I want you to know that if you need any
+   flexibility in the coming weeks, just tell me. I can rebalance
+   the on-call rota with Marina. Don't think of it as a favor, it's
+   literally what the policy is for.
+
+T: Appreciate it. I'll keep you posted.
+
+Feedback on current work
+
+L: I want to share some feedback on the migration to the new
+   authentication service. The technical work you delivered was
+   solid - the staging rollout finished a full day ahead of
+   schedule, the runbook was clear, and the post-mortem from the
+   small incident in week 2 was excellent. I shared it with the
+   platform team and they specifically asked for your permission to
+   use it as a template.
+
+T: Thanks, that means a lot. I learned a lot from the week 2
+   incident, honestly. I was too aggressive in cutting over the
+   first batch of tenants.
+
+L: That's a fair self-assessment. I want to push you a little on
+   that, because the pattern I've seen across the team is that
+   people who are good at moving fast also tend to underestimate
+   the cost of rollback. It's a muscle you can build, and I'd like
+   to make sure you have the room to build it.
+
+Career conversation
+
+L: Where do you see yourself in 12 to 18 months?
+
+T: Honestly, I really enjoy the platform work and I'd like to grow
+   into a Staff Engineer scope, but I worry that I don't have
+   enough experience with the data side of the stack. I've been
+   thinking about doing a rotation on the data infrastructure
+   team.
+
+L: That's a good instinct. A rotation is the most efficient way
+   to close that gap, and we have a slot opening in Q3. Let me
+   introduce you to the EM of that team and we can sketch a
+   proposal. The main constraint will be that we'll need to find
+   someone to cover your on-call while you're out, but that's
+   solvable.
+
+T: Sounds great. Thank you.
+
+Wrap-up
+
+L: Same time in two weeks? I'll send the invite.
+
+T: Perfect. Thanks Lucia.
+
+Notes drafted by Lucia Calderon
+Shared with Tomas for review on April 10, 2024

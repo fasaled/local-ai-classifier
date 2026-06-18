@@ -181,6 +181,10 @@ export async function getLoadedModelPath(): Promise<string | null> {
   return null;
 }
 
+export type ProgressCallback = (current: number, total: number, message: string) => void;
+
+const noopProgress: ProgressCallback = () => {};
+
 export async function classify(
   content: string,
   metadata: {
@@ -192,7 +196,7 @@ export async function classify(
     existingTags: string[];
   },
   labels: Label[],
-  _modelPath: string
+  onProgress: ProgressCallback = noopProgress
 ): Promise<ClassificationResult | null> {
   let url = serverUrl;
   if (!url) {
@@ -212,6 +216,8 @@ export async function classify(
 
   const prompt = "Classify this document by selecting ONE label from the list below.\n\nLABELS:\n" + labelsText + "\n\nDOCUMENT:\n" + content + "\n\nYour response must be ONLY the name of the best matching label (e.g. \"banking\"). Do not include the description.";
 
+  onProgress(0, 1, "classifying");
+
   try {
     const resp = await fetch(url + "/v1/chat/completions", {
       method: "POST",
@@ -227,6 +233,8 @@ export async function classify(
 
     const data = await resp.json();
     const text = data.choices?.[0]?.message?.content || "";
+
+    onProgress(1, 1, "done");
 
     const result = parseResponse(text, labels);
     if (result && result.labels.length > 0) {
@@ -253,7 +261,7 @@ export async function classifyChunked(
     existingTags: string[];
   },
   labels: Label[],
-  _modelPath: string
+  onProgress: ProgressCallback = noopProgress
 ): Promise<{ result: ClassificationResult | null; chunks: number; calls: number }> {
   let url = serverUrl;
   if (!url) {
@@ -287,7 +295,10 @@ export async function classifyChunked(
   const labelCounts: Record<string, number> = {};
   let totalCalls = 0;
 
-  for (const chunk of chunks) {
+  for (let i = 0; i < chunks.length; i++) {
+    const chunk = chunks[i];
+    onProgress(i, chunks.length, `chunk ${i + 1}/${chunks.length}`);
+
     const labelsText = labels.map((l) => l.name + ": " + l.description).join("\n");
 
     const prompt = "Classify this document by selecting ONE label from the list below.\n\nLABELS:\n" + labelsText + "\n\nDOCUMENT:\n" + chunk + "\n\nYour response must be ONLY the name of the best matching label (e.g. \"banking\"). Do not include the description.";
@@ -319,6 +330,8 @@ export async function classifyChunked(
       // skip failed chunk
     }
   }
+
+  onProgress(chunks.length, chunks.length, "finalizing");
 
   const winner = selectLabelByMajority(labelCounts);
 

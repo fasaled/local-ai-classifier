@@ -8,6 +8,7 @@ import {
   removeOwnSemanticTags,
 } from "./xattr.ts";
 import { determineStrategy } from "./context.ts";
+import { startProgress, updateProgress } from "./progress.ts";
 
 export async function processFile(
   filePath: string,
@@ -24,6 +25,7 @@ export async function processFile(
     };
   }
 
+  const filename = filePath.split("/").pop() || filePath;
   const fileInfo = extractFileInfo(filePath);
   let content: string;
   try {
@@ -36,6 +38,12 @@ export async function processFile(
     };
   }
 
+  startProgress(filename, 1, "reading");
+
+  const onProgress = (current: number, total: number, message: string) => {
+    updateProgress(filename, current, total, message);
+  };
+
   const { result, chunks, calls } = await determineStrategy(
     content,
     {
@@ -46,7 +54,8 @@ export async function processFile(
       modified: fileInfo.modified,
       existingTags: fileInfo.existingTags,
     },
-    labels
+    labels,
+    onProgress
   );
 
   if (!result || result.labels.length === 0) {

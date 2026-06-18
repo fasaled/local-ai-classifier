@@ -1,4 +1,5 @@
 import { ProcessingResult } from "./types.ts";
+import { finishProgress } from "./progress.ts";
 
 export function formatTimestamp(startTime: Date): string {
   const now = new Date();
@@ -11,24 +12,27 @@ export function formatTimestamp(startTime: Date): string {
 export function logProgress(
   result: ProcessingResult,
   startTime: Date,
-  labels: Label[] = []
+  _labels: Label[] = []
 ): void {
   const timestamp = formatTimestamp(startTime);
   const filename = result.filePath.split("/").pop() || result.filePath;
   const paddedFilename = filename.padEnd(28).slice(0, 28);
 
+  let line = "";
   if (result.status === "skip") {
-    console.log(`[${timestamp}] SKIP   ${paddedFilename} → already classified`);
+    line = `[${timestamp}] SKIP   ${paddedFilename} → already classified`;
   } else if (result.status === "ok") {
     let extra = "";
     if (result.chunks && result.calls) {
       extra = `  (chunks: ${result.chunks}, calls: ${result.calls})`;
     }
     const labelStr = result.labels?.join(", ") || "";
-    console.log(`[${timestamp}] OK     ${paddedFilename} → ${labelStr}${extra}`);
+    line = `[${timestamp}] OK     ${paddedFilename} → ${labelStr}${extra}`;
   } else if (result.status === "none") {
-    console.log(`[${timestamp}] NONE   ${paddedFilename} → no label found`);
+    line = `[${timestamp}] NONE   ${paddedFilename} → no label found`;
   }
+
+  finishProgress(line);
 }
 
 export function logSummary(summary: {

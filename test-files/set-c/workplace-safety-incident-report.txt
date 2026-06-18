@@ -1,0 +1,77 @@
+INTERNAL INCIDENT INVESTIGATION REPORT
+Site: Miraflores Logistics Center, Loading Bay 4
+Equipment: Toyota 8FBE20U electric forklift, asset code M-1142
+Report author: Esteban Carranza, Health and Safety Coordinator
+Reviewed by: Luis Iturriaga, Legal Counsel
+Reference: MIR-INC-2024-0503
+Classification: Internal - Operations
+Date of report: May 6, 2024
+
+1. SUMMARY
+
+On May 3, 2024 at approximately 22:14, a low-speed collision occurred in
+Loading Bay 4 between forklift M-1142, operated by a worker with six years
+of experience on the same equipment, and a stationary pallet rack. The
+operator suffered minor contusions to the right forearm and was transported
+to the on-site medical center, where he was evaluated, treated, and
+released within 90 minutes. No other workers were in the immediate area at
+the time. The pallet rack was displaced 18 cm from its base anchor and has
+been taken out of service pending structural inspection.
+
+2. EQUIPMENT FINDINGS
+
+The forklift's onboard diagnostic log (extracted from the CAN bus via the
+Toyota I_Site telematics gateway) shows the following sequence in the 30
+seconds preceding the impact:
+
+  - 22:13:51 - Travel speed 6.8 km/h, forks raised to 1.4 m, mast tilt 4
+    degrees forward.
+  - 22:14:02 - Operator released the accelerator pedal. Travel speed
+    decreased to 4.1 km/h within 0.4 seconds.
+  - 22:14:05 - Operator did not actuate the service brake. Travel speed
+    remained 4.1 km/h.
+  - 22:14:08 - Audible reversing alarm was not active. A second operator
+    in Bay 3 reported that the alarm sounded "weak and intermittent" in
+    the minutes before the incident.
+  - 22:14:11 - Impact with pallet rack recorded by the onboard shock
+    sensor (peak 4.2 g).
+
+The rear combination lamp assembly, which integrates the reversing alarm
+buzzer, was last replaced on February 12, 2024 and shows a recorded
+service life of 1,184 operating hours. The acoustic output measured at
+1.0 m from the lamp housing during the post-incident test was 87 dB(A),
+which is below the 95 dB(A) minimum specified in the warehouse's internal
+standard WS-04 (acoustics of in-plant mobile equipment).
+
+3. PROBABLE CAUSE
+
+The probable cause of the incident is the reduced audibility of the
+reversing alarm, which contributed to the operator's delayed perception of
+proximity to the rack when the accelerator was released. The operator
+retained visual contact with the load but reported that the perceived
+distance to the rack was greater than the actual distance.
+
+4. RECOMMENDATIONS
+
+  4.1. Replace the reversing alarm unit on forklift M-1142 and verify
+       acoustic output against standard WS-04 before returning the unit
+       to service.
+
+  4.2. Schedule acoustic output tests for all in-service forklifts in
+       the Miraflores fleet within 30 days. Replace any unit below the
+       95 dB(A) threshold.
+
+  4.3. Update the pre-shift checklist to include a functional test of
+       the reversing alarm by the operator, with a simple "audible at 5
+       meters" criterion.
+
+  4.4. Coordinate with the operations planning team to reduce the average
+       rack density in Bay 4 during night-shift windows, in line with
+       recommendation 7.2 of the 2023 warehouse layout audit.
+
+5. NEXT STEPS
+
+The corrective actions above will be tracked in the operational risk
+register. A follow-up report will be issued 60 days after the corrective
+actions are closed, and a summary will be shared with the Site Safety
+Committee at its next ordinary session.
