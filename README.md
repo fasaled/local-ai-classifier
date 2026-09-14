@@ -1,6 +1,6 @@
-# Local AI File Classifier
+# Sailkari
 
-A **PoC harness** for trying local GGUF models and system prompts on a real task: classify a folder of text files, offline, on macOS.
+**Sailkari** (Basque for “the one who classifies”) is a **PoC harness** for trying local GGUF models and system prompts on a real task: classify a folder of text files, offline, on macOS.
 
 Swap `--model` to compare GGUFs. Swap `--system-prompt` to compare instructions. Labels and documents stay fixed, so differences come from the model or the prompt — not from a hidden API.
 
@@ -8,10 +8,10 @@ Nothing is shipped as “the” model. You bring any instruction-tuned [GGUF](ht
 
 ```bash
 # same docs + labels, different model
-./classifier classify -f ./docs -l examples/labels.yaml -m models/model-a.gguf --force
+./sailkari classify -f ./docs -l examples/labels.yaml -m models/model-a.gguf --force
 
 # same docs + labels + model, different system prompt
-./classifier classify -f ./docs -l examples/labels.yaml -m models/model-a.gguf \
+./sailkari classify -f ./docs -l examples/labels.yaml -m models/model-a.gguf \
   --system-prompt prompts/variant.txt --force
 ```
 
@@ -30,7 +30,7 @@ bun install
 bun run build
 ```
 
-`bun run build` downloads a prebuilt `llama-server` for your Mac architecture into `bin/`, then compiles the CLI into a standalone `classifier` binary.
+`bun run build` downloads a prebuilt `llama-server` for your Mac architecture into `bin/`, then compiles the CLI into a standalone `sailkari` binary.
 
 From source, without compiling:
 
@@ -45,7 +45,7 @@ bun run src/index.ts classify --folder ./docs --labels examples/labels.yaml --mo
 3. Run it on the bundled samples:
 
 ```bash
-./classifier classify \
+./sailkari classify \
   --folder ./examples/documents \
   --labels ./examples/labels.yaml \
   --model ./models/your-model.gguf
@@ -65,8 +65,8 @@ Skipped:               0  (already classified)
 ```
 
 ```bash
-./classifier list-tags ./examples/documents
-./classifier remove-tags ./examples/documents
+./sailkari list-tags ./examples/documents
+./sailkari remove-tags ./examples/documents
 ```
 
 ## Usage
@@ -79,7 +79,7 @@ Skipped:               0  (already classified)
 | `help` | Command list |
 
 ```
-classifier classify --folder <path> --labels <yaml> --model <gguf> [options]
+sailkari classify --folder <path> --labels <yaml> --model <gguf> [options]
 ```
 
 | Option | Description |
@@ -113,7 +113,7 @@ See `examples/labels.yaml`. Describe the **subject** of the document, not the fi
 This is the other axis of the PoC. `--system-prompt` is optional. Omit it to use the built-in classifier prompt. Pass a file to try a different policy against the same labels, documents, and model.
 
 ```bash
-./classifier classify \
+./sailkari classify \
   --folder ./examples/documents \
   --labels ./examples/labels.yaml \
   --model ./models/your-model.gguf \

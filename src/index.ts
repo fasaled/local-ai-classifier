@@ -28,13 +28,13 @@ type Command =
 
 function printHelp(): void {
   console.log(`
-File Classifier CLI — PoC harness for local GGUF models and system prompts
+Sailkari — PoC harness for local GGUF models and system prompts
 
 Usage:
-  classifier classify [options]           Classify files in a folder
-  classifier list-tags <path>              List tags for files in a folder
-  classifier remove-tags <path>            Remove AI tags from files in a folder
-  classifier help                          Show this help message
+  sailkari classify [options]           Classify files in a folder
+  sailkari list-tags <path>              List tags for files in a folder
+  sailkari remove-tags <path>            Remove AI tags from files in a folder
+  sailkari help                          Show this help message
 
 Commands:
   classify [options]    Classify files in a folder
@@ -52,22 +52,22 @@ Commands:
 
 Examples:
   # Classify files (model loads and unloads automatically)
-  classifier classify --folder ./docs --labels labels.yaml --model model.gguf
+  sailkari classify --folder ./docs --labels labels.yaml --model model.gguf
 
   # Evaluate a custom system prompt against a model
-  classifier classify --folder ./docs --labels labels.yaml --model model.gguf --system-prompt prompt.txt
+  sailkari classify --folder ./docs --labels labels.yaml --model model.gguf --system-prompt prompt.txt
 
   # Force reprocess all files
-  classifier classify --folder ./docs --labels labels.yaml --model model.gguf --force
+  sailkari classify --folder ./docs --labels labels.yaml --model model.gguf --force
 
   # Watch folder for new files and classify automatically
-  classifier classify --folder ./docs --labels labels.yaml --model model.gguf --watch
+  sailkari classify --folder ./docs --labels labels.yaml --model model.gguf --watch
 
   # List tags
-  classifier list-tags ./docs
+  sailkari list-tags ./docs
 
   # Remove AI tags
-  classifier remove-tags ./docs
+  sailkari remove-tags ./docs
 `);
 }
 
@@ -76,8 +76,8 @@ function printClassifyHelp(): void {
 classify - Classify files in a folder (starts server, classifies, stops)
 
 Usage:
-  classifier classify --folder <path> --labels <yaml> --model <path>
-  classifier classify --folder <path> --labels <yaml> --model <path> --watch
+  sailkari classify --folder <path> --labels <yaml> --model <path>
+  sailkari classify --folder <path> --labels <yaml> --model <path> --watch
 
 Options:
   --folder, -f <path>         Path to the folder to process (required)
@@ -90,9 +90,9 @@ Options:
   --help, -h                  Show this help message
 
 Examples:
-  classifier classify --folder ./examples/documents --labels examples/labels.yaml --model models/your-model.gguf
-  classifier classify --folder ./examples/documents --labels examples/labels.yaml --model models/your-model.gguf --system-prompt examples/system-prompt.txt
-  classifier classify --folder ./examples/documents --labels examples/labels.yaml --model models/your-model.gguf --watch
+  sailkari classify --folder ./examples/documents --labels examples/labels.yaml --model models/your-model.gguf
+  sailkari classify --folder ./examples/documents --labels examples/labels.yaml --model models/your-model.gguf --system-prompt examples/system-prompt.txt
+  sailkari classify --folder ./examples/documents --labels examples/labels.yaml --model models/your-model.gguf --watch
 `);
 }
 
@@ -181,7 +181,7 @@ async function handleCommand(cmd: Command): Promise<void> {
     case "classify": {
       if (!cmd.args.folder || !cmd.args.labels || !cmd.args.model) {
         console.error("Error: --folder, --labels, and --model are required");
-        console.error("Usage: classifier classify --folder <path> --labels <yaml> --model <path>");
+        console.error("Usage: sailkari classify --folder <path> --labels <yaml> --model <path>");
         printClassifyHelp();
         process.exit(1);
       }
@@ -272,7 +272,7 @@ async function handleCommand(cmd: Command): Promise<void> {
     case "list-tags": {
       if (!cmd.folder) {
         console.error("Error: folder path required");
-        console.error("Usage: classifier list-tags <path>");
+        console.error("Usage: sailkari list-tags <path>");
         process.exit(1);
       }
       console.log("Listing tags for files in: " + cmd.folder + "\n");
@@ -293,7 +293,7 @@ async function handleCommand(cmd: Command): Promise<void> {
     case "remove-tags": {
       if (!cmd.folder) {
         console.error("Error: folder path required");
-        console.error("Usage: classifier remove-tags <path>");
+        console.error("Usage: sailkari remove-tags <path>");
         process.exit(1);
       }
       console.log("Removing tags from files in: " + cmd.folder + "\n");

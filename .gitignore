@@ -43,6 +43,8 @@ bin/
 # Compiled binary
 classifier-dist
 classifier
+sailkari-dist
+sailkari
 
 # Classifier server info
 .classifier/
