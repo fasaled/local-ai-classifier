@@ -1,512 +1,196 @@
-# File Classifier CLI
+# Local AI File Classifier
 
-A self-contained command-line tool for classifying text files in macOS using a local LLM. Applies tags to the filesystem via `xattr` extended attributes. No internet connection required. Files are never moved, renamed, or modified.
+Offline CLI for macOS that classifies text files with a **local LLM** and writes labels as filesystem tags (`xattr`). Files are never moved, renamed, or modified.
 
----
-
-## Concept
-
-An offline tool that reads the content of text files in a folder and applies semantic labels as macOS extended attributes. Labels are defined in a YAML file using natural language descriptions.
-
-The process is non-destructive: file contents are read-only. The tool writes only to `xattr`.
-
----
-
-## Tech Stack
-
-| Component | Technology |
-|---|---|
-| Runtime | Bun (TypeScript) |
-| Bundler | `bun build --compile` (single binary) |
-| LLM inference | llama.cpp (`llama-server` HTTP API) |
-| Models | Any GGUF instruction-tuned model |
-| macOS tagging | `xattr` (extended attributes) |
-| Configuration | YAML |
-| Distribution | Single standalone executable |
-
----
-
-## Prerequisites
-
-- **macOS** (ARM64 or Intel)
-- **Bun** installed (`brew install bun`)
-
----
-
-## Installation
+The tool is **model-agnostic**: you pass any instruction-tuned [GGUF](https://github.com/ggml-org/ggml/blob/master/docs/gguf.md) that [llama.cpp](https://github.com/ggml-org/llama.cpp) can load. No model is shipped, and nothing is sent to the network except `localhost`.
 
 ```bash
-# Install dependencies
-bun install
+./classifier classify \
+  --folder ./docs \
+  --labels examples/labels.yaml \
+  --model models/your-model.gguf
+```
 
-# Build (downloads llama-server + compiles classifier binary)
+## Requirements
+
+- **macOS** (Apple Silicon or Intel)
+- [**Bun**](https://bun.sh) (`brew install bun`)
+- An instruction-tuned **GGUF** model (you download this yourself)
+
+## Install
+
+```bash
+git clone https://github.com/fasaled/local-ai-classifier.git
+cd local-ai-classifier
+bun install
 bun run build
 ```
 
-The build process:
+`bun run build` downloads a prebuilt `llama-server` for your Mac architecture into `bin/`, then compiles the CLI into a standalone `classifier` binary.
 
-1. Runs `prebuild` script: downloads pre-built `llama-server` binary from llama.cpp GitHub releases
-2. Compiles the TypeScript CLI into a single standalone executable: `classifier`
-
-After building:
-
-```
-bin/                          # llama-server + dynamic libraries
-classifier                    # standalone CLI binary
-```
-
-### Manual llama-server update
+From source, without compiling:
 
 ```bash
-bun run scripts/download-llama.ts
+bun run src/index.ts classify --folder ./docs --labels examples/labels.yaml --model models/your-model.gguf
 ```
 
-To force a clean re-download:
+## Try it
+
+1. Search [Hugging Face](https://huggingface.co/models?library=gguf) for an instruct/chat model in GGUF form. **Q4_K_M** is a common quantization. Base (non-instruct) models usually ignore the prompt.
+2. Put the file in `models/` (create the folder if needed).
+3. Run it on the bundled samples:
 
 ```bash
-rm -rf bin/llama-server bin/*.dylib
-bun run scripts/download-llama.ts
-```
-
----
-
-## Quick Start
-
-```bash
-# Download a model
-mkdir -p models
-# Qwen 2.5-1.5B: https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF
-# Place qwen2.5-1.5b-instruct-q4_k_m.gguf in models/
-
-# Run classification
 ./classifier classify \
-  --folder /path/to/folder \
-  --labels labels.yaml \
-  --model models/qwen2.5-1.5b-instruct-q4_k_m.gguf
+  --folder ./examples/documents \
+  --labels ./examples/labels.yaml \
+  --model ./models/your-model.gguf
 ```
 
-**Example output:**
+Swap models by changing `--model`. No config change, no rebuild. Point `--folder` at your own documents when you are ready.
 
 ```
-Loading model (this may take a minute)...
-
-Model loaded and ready.
-Loading labels...
-Loaded 5 labels: family, banking, marketing, technology, pets
-Scanning folder...
-Found 9 text files
-
 [00:00] OK     adoption-papers.txt          → pets
-[00:01] OK     vet-records.txt              → pets
 [00:01] OK     school-notice.txt            → family
-[00:01] OK     brand-guidelines.txt         → marketing
-[00:01] OK     birthday-card.txt            → family
-[00:02] OK     medical-record.txt           → family
-[00:02] OK     vaccination-cert.txt         → pets
-[00:02] OK     social-media-calendar.txt    → marketing
-[00:03] OK     holiday-card.txt             → family
 ──────────────────────────────────────────
-Processed:             9 files
-  Tagged:              9
+Processed:             18 files
+  Tagged:              18
   No label:            0  (no matching label)
 Skipped:               0  (already classified)
-Total time:            8s
 ──────────────────────────────────────────
-llama-server stopped.
 ```
 
----
+```bash
+./classifier list-tags ./examples/documents
+./classifier remove-tags ./examples/documents
+```
 
 ## Usage
 
-The CLI exposes three commands plus `help`:
-
 | Command | Description |
 |---|---|
-| `classify [options]` | Classify files in a folder (starts server, classifies, stops) |
-| `list-tags <path>` | List tags for all files in a folder |
-| `remove-tags <path>` | Remove AI tags from all files in a folder |
-| `help` | Show the command list |
+| `classify [options]` | Start the server, classify, stop (or `--watch`) |
+| `list-tags <path>` | Print AI labels for every text file in a folder |
+| `remove-tags <path>` | Delete only this tool's xattrs |
+| `help` | Command list |
 
-The inference server is managed automatically: `classify` starts `llama-server` and loads the model at the beginning of each run, then stops it when classification finishes (or on `Ctrl+C` in watch mode). There is no manual start/stop command.
-
-### `classify` — Classify files
-
-Runs the full pipeline: starts the inference server, loads the model, classifies every text file in the folder, then stops the server (unless `--watch` is set).
-
-```bash
-classifier classify --folder <path> --labels <yaml> --model <path> [options]
+```
+classifier classify --folder <path> --labels <yaml> --model <gguf> [options]
 ```
 
 | Option | Description |
 |---|---|
-| `--folder`, `-f <path>` | Folder to process (required) |
-| `--labels`, `-l <yaml>` | YAML file with label definitions (required) |
-| `--model`, `-m <path>` | GGUF model file (required) |
-| `--force` | Reprocess files already tagged (deletes the existing `ai-classified-labels` xattr) |
-| `--watch`, `-w` | Keep the server running and auto-classify new or modified files (see [Watch Mode](#watch-mode)) |
-| `--help`, `-h` | Show help for `classify` |
+| `--folder`, `-f` | Folder to process (**required**) |
+| `--labels`, `-l` | YAML label file (**required**) |
+| `--model`, `-m` | Path to a GGUF file (**required**) |
+| `--system-prompt`, `-s` | Optional system prompt file (for prompt and model eval) |
+| `--force` | Reclassify files that already have the marker |
+| `--watch`, `-w` | Keep the model loaded; classify new or modified files (top-level folder only, 750 ms debounce). Stop with `Ctrl+C` |
+| `--help`, `-h` | Help for `classify` |
 
-Examples:
+The inference server is started and stopped by `classify`. There is no separate start/stop command. Port `8080` must be free.
 
-```bash
-# Standard run — model loads and unloads automatically
-./classifier classify \
-  --folder ./docs \
-  --labels labels.yaml \
-  --model models/qwen2.5-1.5b-instruct-q4_k_m.gguf
+## Labels
 
-# Reprocess every file (ignore the ai-classified marker)
-./classifier classify \
-  --folder ./docs \
-  --labels labels.yaml \
-  --model models/qwen2.5-1.5b-instruct-q4_k_m.gguf \
-  --force
-
-# Watch the folder and classify new files as they appear (Ctrl+C to stop)
-./classifier classify \
-  --folder ./inbox \
-  --labels labels.yaml \
-  --model models/qwen2.5-1.5b-instruct-q4_k_m.gguf \
-  --watch
-```
-
-### `list-tags` — Inspect existing tags
-
-```bash
-./classifier list-tags ./docs
-```
-
-Reads the `ai-classified-labels` xattr on every text file in the folder and prints one line per file:
-
-```
-adoption-papers.txt                    → pets
-vet-records.txt                        → pets
-school-notice.txt                      → family
-notes.txt                              → (no tags)
-```
-
-Files with no tags at all are listed as `(no tags)`.
-
-### `remove-tags` — Strip AI tags
-
-```bash
-./classifier remove-tags ./docs
-```
-
-Deletes only the `ai-classified` and `ai-classified-labels` xattrs the tool itself wrote. Other xattrs (including any user-added ones) are preserved. Files without AI tags are listed as `(no AI tags to remove)`.
-
-### `help`
-
-```bash
-./classifier help
-./classifier classify --help
-```
-
-Prints the command list. `classify` also accepts `--help` for its own option reference.
-
----
-
-## Label Definition
-
-Labels are defined in a YAML file. Each label is a key-value pair where the value is a natural language description.
+A YAML map of `name: "natural-language description"`. Labels and the document are always sent as the **user** message. Classification policy lives in the system prompt.
 
 ```yaml
-# labels.yaml
-family: "Family documents including personal letters, birthday cards, family photos descriptions, home videos notes, school documents, medical records, insurance policies"
-banking: "Banking and financial documents including account statements, investment portfolios, tax returns, credit card bills, loan applications, ATM receipts"
-marketing: "Marketing and sales documents including proposals, brochures, brand guidelines, social media posts, press releases, market analysis"
-technology: "Technology documents including software architecture, programming guides, system design, technical documentation, API specifications, security guides"
-pets: "Pet-related documents including veterinary records, vaccination certificates, pet care guides, adoption papers, pet insurance, training notes"
+family: "Family documents including personal letters, birthday cards, school documents, medical records"
+banking: "Banking and financial documents including statements, tax returns, credit card bills"
+marketing: "Marketing and sales documents including proposals, brand guidelines, press releases"
+technology: "Technology documents including architecture, API specs, security guides"
+pets: "Pet-related documents including veterinary records, vaccination certificates, adoption papers"
 ```
 
----
+See `examples/labels.yaml`. Describe the **subject** of the document, not the file format, and keep labels mutually exclusive on that axis.
 
-## Tag System
+## System prompts
 
-The tool writes two extended attributes to each classified file:
+`--system-prompt` is optional. Omit it to use the built-in classifier prompt. Pass a file to evaluate a different policy against the same labels, documents, and model.
 
-| Attribute | Purpose |
+```bash
+./classifier classify \
+  --folder ./examples/documents \
+  --labels ./examples/labels.yaml \
+  --model ./models/your-model.gguf \
+  --system-prompt ./examples/system-prompt.txt \
+  --force
+```
+
+Swap `--model` to compare GGUFs. Swap `--system-prompt` to compare instructions. The user payload (label list + document) stays fixed.
+
+The parser only accepts:
+
+- a bare label name: `banking`
+- JSON: `{"labels":["banking"]}` or `[{"label":"banking"}]`
+
+Anything else is recorded as `NONE`. A system prompt used with this tool **must** therefore:
+
+1. Tell the model to pick **exactly one** label from the list in the user message.
+2. Tell it to reply with **only** the label name (or the JSON shape above) — no quotes, markdown, or explanation.
+3. Tell it not to invent labels. `NONE` if nothing fits is fine; the CLI treats that as no match.
+
+Copy `examples/system-prompt.txt` (same text as the built-in default) and edit the policy. Leave the output contract intact, or parsing will fail even when the model “understood” the document.
+
+If a custom prompt looks unconstrained, the CLI prints a warning and still runs — that is a valid eval outcome.
+
+## Tags (`xattr`)
+
+Raw macOS extended attributes, not Finder color tags.
+
+| Attribute | Role |
 |---|---|
-| `ai-classified` | Marker: "this file has been processed by the classifier" |
-| `ai-classified-labels` | Space-separated list of assigned labels (e.g. `"family"`) |
+| `ai-classified` | Cache key: already processed (skipped unless `--force`) |
+| `ai-classified-labels` | Space-separated label names |
 
-These are regular `xattr` attributes, not Finder color tags. Inspect with:
-
-```bash
-xattr -l file.txt
-xattr -p ai-classified-labels file.txt
-```
-
-The tool distinguishes its own attributes from any user-added ones — `--force` only rewrites `ai-classified-labels`, leaving other xattrs untouched.
-
----
-
-## Processing Flow
-
-### 1. Inventory
-
-Scan the folder for text files (extensions: `.txt`, `.md`, `.csv`, `.json`, `.yaml`, `.yml`, `.xml`, `.log`, `.conf`, `.config`, `.ini`, `.toml`, `.properties`). Read current `xattr` state for each.
-
-**Skip criterion:** if a file already has the `ai-classified` marker, it is skipped unless `--force` is used.
-
-### 2. Per-file processing
-
-For each file to be processed:
-
-1. Read content with `Bun.file().text()`
-2. Extract metadata: name, size, created, modified
-3. Determine classification strategy (see below)
-4. Send prompt to llama-server
-5. Parse response → extract label name(s)
-6. Write `xattr` with the result
-
-### 3. Context strategy
-
-The model context is 32 768 tokens. If the file content fits, classify directly. Otherwise, chunk it.
-
-```
-Does the content fit within 32 768 tokens?
-  ├── Yes → direct classification (1 model call)
-  └── No  → split into chunks, classify each, majority vote
-```
-
-For chunked classification, the final label is the one that wins by majority across all chunks.
-
-### 4. Prompt
-
-The model is instructed to return a single label name:
-
-```
-Classify this document by selecting ONE label from the list below.
-
-LABELS:
-family: Family documents including ...
-banking: Banking and financial documents including ...
-...
-
-DOCUMENT:
-<file content>
-
-Your response must be ONLY the name of the best matching label.
-```
-
-The response is parsed (text or JSON) and the matched label is applied.
-
-### 5. Output
-
-Tags written via `xattr`:
+`--force` and `remove-tags` only touch these two keys. Other xattrs are left alone.
 
 ```bash
-xattr -w ai-classified 1 file.txt
-xattr -w ai-classified-labels "family" file.txt
+xattr -p ai-classified-labels some-file.txt
 ```
 
----
-
-## Watch Mode
-
-`--watch` keeps the server running and classifies new or modified text files as they appear in the folder.
-
-```bash
-./classifier classify --folder ./inbox --labels labels.yaml --model model.gguf --watch
-```
-
-Behavior:
-
-- Model is loaded once and stays in memory
-- New text files in the folder are classified automatically
-- Files with the `ai-classified` marker are skipped (use `--force` to reprocess)
-- Debounce: 750ms to avoid duplicate classifications on partial writes
-- **Non-recursive** — does not watch subdirectories
-- Stop with `Ctrl+C` (SIGINT) — server unloads cleanly
-
-Use cases:
-
-- Drop files into a watched folder for hands-off tagging
-- CI integration: process files as they land in a staging area
-- Workflow automation: chain with any tool that produces text files
-
----
-
-## Cache System
-
-The `ai-classified` marker is the cache key.
-
-### Decision logic
+## How it works
 
 ```
-Does the file have the "ai-classified" xattr?
-  ├── Yes + no --force  → SKIP (already processed)
-  ├── Yes + --force     → REPROCESS
-  │     └── Delete "ai-classified-labels" xattr
-  │         Preserve any other xattrs
-  │         Write new "ai-classified-labels" + "ai-classified"
-  └── No                → PROCESS always
+scan → skip if ai-classified
+     → read bytes
+     → fit in 32k context?  yes → 1 completion
+                            no  → N chunks, majority vote
+     → parse label name
+     → write xattr
 ```
 
-### --force behavior
+**llama-server as a child process.** The CLI spawns [llama.cpp](https://github.com/ggml-org/llama.cpp) `llama-server`, waits on `GET /health`, calls `POST /v1/chat/completions`, then SIGTERM / SIGKILL. Inference stays in llama.cpp (GGUF loader, Metal, chat templates). Swapping models is a file path, not a rebuild of native addons.
 
-- Deletes only the `ai-classified-labels` xattr
-- Preserves all other xattrs (user-added)
-- Re-runs classification
+**Model and system prompt are plugins.** `--model` is a GGUF path. `--system-prompt` is a text file. Temperature is `0`. Labels and document always go in the user message so those two flags are the variables you change when evaluating.
 
----
+**Labels in YAML, tags on the file.** Changing the taxonomy does not require a code change. `xattr` keeps the decision next to the document — no extra database. That also makes the tool **macOS-only**.
 
-## Output Log
+**Non-destructive.** Only the two `ai-classified*` keys are written. File bytes are never rewritten.
 
-### Real-time output
+**Sequential.** `--parallel 1` to keep peak RAM down. One in-flight completion at a time.
 
-```
-Loading model (this may take a minute)...
-
-Model loaded and ready.
-Loading labels...
-Loaded 5 labels: family, banking, marketing, technology, pets
-Scanning folder...
-Found 9 text files
-
-[00:00] OK     adoption-papers.txt          → pets
-[00:00] OK     vet-records.txt              → pets
-[00:01] OK     school-notice.txt            → family
-──────────────────────────────────────────
-Processed:             9 files
-  Tagged:              9
-  No label:            0  (no matching label)
-Skipped:               0  (already classified)
-Total time:            8s
-──────────────────────────────────────────
-llama-server stopped.
-```
-
-For chunked files, the log shows extra info:
-
-```
-[00:30] OK     microservices-architecture.txt → technology  (chunks: 3, calls: 3)
-```
-
-### Status values
-
-| Status | Meaning |
-|--------|---------|
-| `OK` | Classified, label written |
-| `NONE` | Model could not match any label |
-| `SKIP` | Already classified, or unreadable file |
-
-### Summary
-
-```
-──────────────────────────────────────────
-Processed:             N files
-  Tagged:              N
-  No label:            N  (no matching label)
-Skipped:               N  (already classified)
-Total time:            Ns
-──────────────────────────────────────────
-```
-
----
-
-## Inference Server (llama-server)
-
-The classifier uses [llama-server](https://github.com/ggerganov/llama.cpp) as a child process.
-
-### Startup
-
-```bash
-llama-server -m model.gguf -c 32768 --port 8080 --log-disable --parallel 1
-```
-
-| Flag | Value | Purpose |
-|------|-------|---------|
-| `-m` | `<model>` | Path to GGUF model |
-| `-c` | `32768` | Context window (tokens) |
-| `--port` | `8080` | HTTP port |
-| `--log-disable` | — | Suppress llama.cpp verbose logs |
-| `--parallel` | `1` | Single concurrent request |
-
-### API used
-
-```
-POST http://localhost:8080/v1/chat/completions
-Content-Type: application/json
-
-{
-  "messages": [{ "role": "user", "content": "<prompt>" }],
-  "temperature": 0,
-  "stream": false
-}
-```
-
-### Lifecycle
-
-1. **Spawn** — `bun.spawn(["llama-server", ...])` with `stdio: ["ignore", "pipe", "pipe"]`
-2. **Health check** — `GET /health` polled every 200ms until 200 OK (max 30s)
-3. **Classify** — POST per file to `/v1/chat/completions`
-4. **Stop** — SIGTERM sent, wait up to 5s, then SIGKILL
-
-### Requirements
-
-- `bin/llama-server` must exist (downloaded by `prebuild`)
-- The model file must be a valid GGUF (Q4_K_M recommended for size/quality balance)
-- Port 8080 must be free
-
----
-
-## Model Configuration
-
-| Parameter | Value |
-|---|---|
-| Recommended model | Qwen 2.5-1.5B Instruct (GGUF, Q4_K_M, 1.0GB) |
-| Context | 32 768 tokens |
-| Temperature | 0 (deterministic) |
-| Max response tokens | 16 (label name only) |
-| Network | None — fully local |
-
----
-
-## Building
-
-```bash
-# Install dependencies
-bun install
-
-# Build (downloads llama-server + compiles classifier)
-bun run build
-```
-
-`bun run build` does:
-
-1. `prebuild` → runs `scripts/download-llama.ts` to fetch llama.cpp prebuilt binary
-2. `build` → `bun build --compile --target bun --outfile classifier src/index.ts`
-
-The result is a single `classifier` binary (~60MB) that bundles the Bun runtime + all TypeScript.
-
-To run from source without compiling:
-
-```bash
-bun run src/index.ts <command>
-```
-
----
+**Standalone binary.** `bun build --compile` embeds the Bun runtime and TypeScript. `llama-server` and its dylibs stay in `bin/` because they are native and architecture-specific.
 
 ## Limitations
 
-- **Plain text only** — `.txt`, `.md`, `.csv`, `.json`, `.yaml`, `.yml`, `.xml`, `.log`, `.conf`, `.config`, `.ini`, `.toml`, `.properties`. No PDFs, images, binaries, Office docs.
-- **Non-recursive watch** — `--watch` only monitors the top-level folder, not subdirectories.
-- **macOS only** — `xattr` is macOS-specific. Linux uses a different xattr API.
-- **No parallel classification** — llama-server is configured with `--parallel 1`. Sequential is simpler and avoids OOM.
-- **No Finder color tags** — uses raw xattr, not Finder's green/orange/red labels.
-- **No model auto-download** — you must provide your own GGUF file.
+- Plain text only (`.txt`, `.md`, `.csv`, `.json`, `.yaml`, `.yml`, `.xml`, `.log`, `.conf`, `.config`, `.ini`, `.toml`, `.properties`). No PDF, Office, or images.
+- macOS only (`xattr`).
+- `--watch` is not recursive.
+- No model download — you bring the GGUF.
+- Not Finder colored tags.
 
----
+## Tests
 
-## Results
+```bash
+bun test        # unit tests (parser, progress, watcher) — no model required
+bun test e2e    # inference against llama-server — needs bin/llama-server and a GGUF
+```
 
-See [RESULTS.md](./RESULTS.md) for detailed model comparison results.
+E2E looks for `CLASSIFIER_MODEL` or the first `models/*.gguf`. It copies fixtures to a temp directory, so example files are not tagged. If the runtime or a model is missing, those tests are skipped. Nothing is written back into the repo.
 
-**Recommended Model: Qwen 2.5-1.5B**
-- ~89% accuracy on 18-file test set
-- ~500ms per small file
-- 1.0GB model size
-- Best balance of accuracy, speed, and footprint
+`CLASSIFIER_E2E=0 bun test e2e` forces a skip.
+
+## License
+
+[MIT](./LICENSE). llama.cpp is a separate project; this repo downloads its official macOS binaries at build time.

@@ -13,7 +13,8 @@ import { startProgress, updateProgress } from "./progress.ts";
 export async function processFile(
   filePath: string,
   labels: Label[],
-  force: boolean
+  force: boolean,
+  systemPrompt?: string
 ): Promise<ProcessingResult> {
   const hasAIClassified = hasAIClassifiedTag(filePath);
 
@@ -55,7 +56,8 @@ export async function processFile(
       existingTags: fileInfo.existingTags,
     },
     labels,
-    onProgress
+    onProgress,
+    systemPrompt
   );
 
   if (!result || result.labels.length === 0) {

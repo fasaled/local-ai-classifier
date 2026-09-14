@@ -18,12 +18,13 @@ export async function determineStrategy(
     existingTags: string[];
   },
   labels: Label[],
-  onProgress?: ProgressCallback
+  onProgress?: ProgressCallback,
+  systemPrompt?: string
 ): Promise<ContextStrategyResult> {
   const tokenCount = Math.ceil(content.length / 4);
 
   if (tokenCount <= EFFECTIVE_LIMIT) {
-    const result = await classify(content, metadata, labels, onProgress);
+    const result = await classify(content, metadata, labels, onProgress, systemPrompt);
     return { result };
   }
 
@@ -31,7 +32,8 @@ export async function determineStrategy(
     content,
     metadata,
     labels,
-    onProgress
+    onProgress,
+    systemPrompt
   );
   return { result, chunks, calls };
 }

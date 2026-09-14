@@ -1,8 +1,7 @@
-import { mkdirSync, rmSync, copyFileSync, existsSync, readdirSync, lstatSync } from "bun:fs";
+import { mkdirSync, rmSync, copyFileSync, existsSync } from "bun:fs";
 import { execSync } from "bun:child_process";
 
 const VERSION = "b9413";
-const ARCHIVE_URL = "https://github.com/ggml-org/llama.cpp/releases/download/b9413/llama-b9413-bin-macos-arm64.tar.gz";
 
 const PROJECT_ROOT = process.cwd();
 const BIN_DIR = PROJECT_ROOT + "/bin";
@@ -31,28 +30,47 @@ const NEEDED_FILES = [
   "libllama-common.dylib",
 ];
 
+function macArch(): "arm64" | "x64" {
+  const machine = execSync("uname -m", { encoding: "utf-8" }).trim();
+  if (machine === "x86_64") return "x64";
+  if (machine === "arm64") return "arm64";
+  throw new Error(
+    `Unsupported architecture "${machine}". llama.cpp prebuilds are published for macOS arm64 and x64.`
+  );
+}
+
+function archiveUrl(arch: "arm64" | "x64"): string {
+  return `https://github.com/ggml-org/llama.cpp/releases/download/${VERSION}/llama-${VERSION}-bin-macos-${arch}.tar.gz`;
+}
+
+function missingRuntimeFiles(): string[] {
+  return NEEDED_FILES.filter((file) => !existsSync(BIN_DIR + "/" + file));
+}
+
 async function downloadLlama(): Promise<void> {
-  console.log("Downloading llama.cpp...");
-  console.log("URL: " + ARCHIVE_URL);
+  const arch = macArch();
+  const url = archiveUrl(arch);
+
+  console.log("Downloading llama.cpp " + VERSION + " for macOS " + arch + "...");
+  console.log("URL: " + url);
 
   const tmpDir = "/tmp/llama-build-download";
 
   try {
     rmSync(tmpDir, { recursive: true, force: true });
-  } catch (e) {}
+  } catch {}
   execSync("mkdir -p " + tmpDir);
 
   try {
     console.log("Downloading archive (this may take a few minutes)...");
-    execSync("curl -L -o " + tmpDir + "/archive.tar.gz \"" + ARCHIVE_URL + "\"");
+    execSync('curl -L --fail -o ' + tmpDir + '/archive.tar.gz "' + url + '"');
 
     console.log("Extracting...");
     execSync("tar -xzf " + tmpDir + "/archive.tar.gz -C " + tmpDir);
 
-    const extractedPath = tmpDir + "/llama-b9413";
-
+    const extractedPath = tmpDir + "/llama-" + VERSION;
     if (!existsSync(extractedPath)) {
-      throw new Error("Extracted path not found");
+      throw new Error("Extracted path not found: " + extractedPath);
     }
 
     console.log("Installing to bin/...");
@@ -64,7 +82,7 @@ async function downloadLlama(): Promise<void> {
         copyFileSync(srcPath, BIN_DIR + "/" + file);
         console.log("  Installed: " + file);
       } else {
-        console.log("  Missing: " + file);
+        console.log("  Missing in archive (skipped): " + file);
       }
     }
 
@@ -76,28 +94,26 @@ async function downloadLlama(): Promise<void> {
     console.error("Error:", e?.message || e);
     try {
       rmSync(tmpDir, { recursive: true, force: true });
-    } catch (e2) {}
+    } catch {}
     console.error("Failed to download llama-server");
     process.exit(1);
   }
 }
 
 async function main() {
-  if (await Bun.file(LLAMA_SERVER_PATH).exists()) {
-    const allExist = true;
-    for (const file of NEEDED_FILES) {
-      if (!existsSync(BIN_DIR + "/" + file)) {
-        console.log("Missing file: " + file + " - re-downloading...");
-        await downloadLlama();
-        break;
-      }
-    }
-    if (allExist) {
-      console.log("llama-server already exists at " + LLAMA_SERVER_PATH);
-    }
-  } else {
+  if (!(await Bun.file(LLAMA_SERVER_PATH).exists())) {
     await downloadLlama();
+    return;
   }
+
+  const missing = missingRuntimeFiles();
+  if (missing.length > 0) {
+    console.log("Missing file: " + missing[0] + " — re-downloading...");
+    await downloadLlama();
+    return;
+  }
+
+  console.log("llama-server already exists at " + LLAMA_SERVER_PATH);
 }
 
 main();

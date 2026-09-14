@@ -33,15 +33,16 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 # Finder (MacOS) folder config
 .DS_Store
 
-# Local models (user-specific)
+# Local models (user-provided GGUF files)
 models/
+*.gguf
+
+# llama.cpp runtime (downloaded by scripts/download-llama.ts)
+bin/
 
 # Compiled binary
 classifier-dist
 classifier
-
-# Test files
-test-response.ts
 
 # Classifier server info
 .classifier/

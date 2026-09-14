@@ -1,0 +1,10 @@
+# Starter taxonomy. Each value is a natural-language description the model
+# reads as-is. Edit freely — no code changes required.
+#
+# Tip: describe the document's subject, not its format, if those can disagree.
+
+family: "Family documents including personal letters, birthday cards, family photos descriptions, home videos notes, school documents, medical records, insurance policies"
+banking: "Banking and financial documents including account statements, investment portfolios, tax returns, credit card bills, loan applications, ATM receipts"
+marketing: "Marketing and sales documents including proposals, brochures, brand guidelines, social media posts, press releases, market analysis"
+technology: "Technology documents including software architecture, programming guides, system design, technical documentation, API specifications, security guides"
+pets: "Pet-related documents including veterinary records, vaccination certificates, pet care guides, adoption papers, pet insurance, training notes"

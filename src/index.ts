@@ -4,6 +4,7 @@ import { logProgress, logSummary } from "./logger.ts";
 import { startServer, stopServer } from "./llm.ts";
 import { getAllTags, removeOwnTags, hasAIClassifiedTag } from "./xattr.ts";
 import { watchFolder } from "./watcher.ts";
+import { inspectSystemPrompt, loadSystemPrompt } from "./prompt.ts";
 import type { ProcessingSummary } from "./types.ts";
 
 interface GlobalFlags {
@@ -14,6 +15,7 @@ interface ClassifyCommand extends GlobalFlags {
   folder: string;
   labels: string;
   model: string;
+  systemPrompt: string;
   force: boolean;
   watch: boolean;
 }
@@ -39,6 +41,7 @@ Commands:
     --folder, -f        Path to the folder to process (required)
     --labels, -l         Path to the YAML file with label definitions (required)
     --model, -m         Path to the GGUF model file (required)
+    --system-prompt, -s Optional system prompt file (for prompt/model eval)
     --force             Reprocess files already classified
     --watch, -w         Keep server running and auto-classify new files
     --help, -h          Show help for this command
@@ -50,6 +53,9 @@ Commands:
 Examples:
   # Classify files (model loads and unloads automatically)
   classifier classify --folder ./docs --labels labels.yaml --model model.gguf
+
+  # Evaluate a custom system prompt against a model
+  classifier classify --folder ./docs --labels labels.yaml --model model.gguf --system-prompt prompt.txt
 
   # Force reprocess all files
   classifier classify --folder ./docs --labels labels.yaml --model model.gguf --force
@@ -74,16 +80,19 @@ Usage:
   classifier classify --folder <path> --labels <yaml> --model <path> --watch
 
 Options:
-  --folder, -f <path>   Path to the folder to process (required)
-  --labels, -l <yaml>   Path to the YAML file with label definitions (required)
-  --model, -m <path>    Path to the LLM model file (required)
-  --force               Reprocess files already classified by this tool
-  --watch, -w           Keep server running and auto-classify new files
-  --help, -h            Show this help message
+  --folder, -f <path>         Path to the folder to process (required)
+  --labels, -l <yaml>         Path to the YAML file with label definitions (required)
+  --model, -m <path>          Path to the GGUF model file (required)
+  --system-prompt, -s <file>  Optional system prompt file. Default: built-in classifier prompt.
+                              Must ask for exactly one label name (see README).
+  --force                     Reprocess files already classified by this tool
+  --watch, -w                 Keep server running and auto-classify new files
+  --help, -h                  Show this help message
 
 Examples:
-  classifier classify --folder ./documents --labels labels.yaml --model models/qwen2.5-1.5b.gguf
-  classifier classify --folder ./documents --labels labels.yaml --model models/qwen2.5-1.5b.gguf --watch
+  classifier classify --folder ./examples/documents --labels examples/labels.yaml --model models/your-model.gguf
+  classifier classify --folder ./examples/documents --labels examples/labels.yaml --model models/your-model.gguf --system-prompt examples/system-prompt.txt
+  classifier classify --folder ./examples/documents --labels examples/labels.yaml --model models/your-model.gguf --watch
 `);
 }
 
@@ -124,11 +133,13 @@ function parseCommand(args: string[]): Command | null {
     case "-c": {
       const { flags, remaining } = parseGlobalFlags(args.slice(1));
       if (flags.help) {
-        return { cmd: "help" };
+        printClassifyHelp();
+        return null;
       }
       const folderFlagIdx = remaining.findIndex((a) => a === "--folder" || a === "-f");
       const labelsFlagIdx = remaining.findIndex((a) => a === "--labels" || a === "-l");
       const modelFlagIdx = remaining.findIndex((a) => a === "--model" || a === "-m");
+      const systemPromptFlagIdx = remaining.findIndex((a) => a === "--system-prompt" || a === "-s");
       const nonFlagArgs = remaining.filter((a) => !a.startsWith("-"));
       return {
         cmd: "classify",
@@ -136,6 +147,7 @@ function parseCommand(args: string[]): Command | null {
           folder: folderFlagIdx !== -1 ? remaining[folderFlagIdx + 1] : nonFlagArgs[0] || "",
           labels: labelsFlagIdx !== -1 ? remaining[labelsFlagIdx + 1] : "",
           model: modelFlagIdx !== -1 ? remaining[modelFlagIdx + 1] : nonFlagArgs[1] || "",
+          systemPrompt: systemPromptFlagIdx !== -1 ? remaining[systemPromptFlagIdx + 1] || "" : "",
           force: remaining.includes("--force"),
           watch: remaining.includes("--watch") || remaining.includes("-w"),
           help: flags.help,
@@ -179,6 +191,17 @@ async function handleCommand(cmd: Command): Promise<void> {
       await startServer(cmd.args.model);
       const modelLoadTime = Date.now() - modelLoadStart;
 
+      let systemPrompt: string | undefined;
+      if (cmd.args.systemPrompt) {
+        systemPrompt = await loadSystemPrompt(cmd.args.systemPrompt);
+        console.log("Using system prompt: " + cmd.args.systemPrompt);
+        for (const warning of inspectSystemPrompt(systemPrompt)) {
+          console.warn("Warning: " + warning);
+        }
+      } else {
+        console.log("Using built-in system prompt");
+      }
+
       console.log("Loading labels...");
       const labels = await loadLabels(cmd.args.labels);
       console.log(`Loaded ${labels.length} labels: ${labels.map((l) => l.name).join(", ")}`);
@@ -197,7 +220,7 @@ async function handleCommand(cmd: Command): Promise<void> {
       };
 
       for (const filePath of files) {
-        const result = await processFile(filePath, labels, cmd.args.force);
+        const result = await processFile(filePath, labels, cmd.args.force, systemPrompt);
         logProgress(result, startTime, labels);
 
         if (result.status === "ok") {
@@ -222,7 +245,7 @@ async function handleCommand(cmd: Command): Promise<void> {
           debounceMs: 750,
           signal: ac.signal,
           onFile: async (filePath) => {
-            const r = await processFile(filePath, labels, cmd.args.force);
+            const r = await processFile(filePath, labels, cmd.args.force, systemPrompt);
             logProgress(r, new Date(), labels);
           },
         });

@@ -1,6 +1,7 @@
 import { spawn, execSync } from "bun:child_process";
 import type { Label, ClassificationResult } from "./types.ts";
 import { parseResponse, selectLabelByMajority } from "./parser.ts";
+import { DEFAULT_SYSTEM_PROMPT, buildChatMessages } from "./prompt.ts";
 
 const MAX_CONTEXT = 32768;
 const SYSTEM_RESERVE = 1024;
@@ -185,6 +186,36 @@ export type ProgressCallback = (current: number, total: number, message: string)
 
 const noopProgress: ProgressCallback = () => {};
 
+async function resolveServerUrl(): Promise<string> {
+  if (serverUrl) return serverUrl;
+  const info = await loadServerInfo();
+  if (info && await checkServerRunning()) {
+    serverUrl = "http://localhost:" + info.port;
+    loadedModelPath = info.modelPath;
+    return serverUrl;
+  }
+  throw new Error("Server not running. Run classify with --model <path> first.");
+}
+
+async function complete(
+  url: string,
+  systemPrompt: string,
+  labels: Label[],
+  document: string
+): Promise<string> {
+  const resp = await fetch(url + "/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messages: buildChatMessages(systemPrompt, labels, document),
+      temperature: 0,
+      stream: false,
+    }),
+  });
+  const data = await resp.json();
+  return data.choices?.[0]?.message?.content || "";
+}
+
 export async function classify(
   content: string,
   metadata: {
@@ -196,44 +227,15 @@ export async function classify(
     existingTags: string[];
   },
   labels: Label[],
-  onProgress: ProgressCallback = noopProgress
+  onProgress: ProgressCallback = noopProgress,
+  systemPrompt: string = DEFAULT_SYSTEM_PROMPT
 ): Promise<ClassificationResult | null> {
-  let url = serverUrl;
-  if (!url) {
-    const info = await loadServerInfo();
-    if (info && await checkServerRunning()) {
-      url = "http://localhost:" + info.port;
-      loadedModelPath = info.modelPath;
-    }
-  }
-
-  if (!url) {
-    throw new Error("Server not running. Run --server-start --model <path> first.");
-  }
-
-  const labelNames = labels.map((l) => l.name).join(", ");
-  const labelsText = labels.map((l) => l.name + ": " + l.description).join("\n");
-
-  const prompt = "Classify this document by selecting ONE label from the list below.\n\nLABELS:\n" + labelsText + "\n\nDOCUMENT:\n" + content + "\n\nYour response must be ONLY the name of the best matching label (e.g. \"banking\"). Do not include the description.";
+  const url = await resolveServerUrl();
 
   onProgress(0, 1, "classifying");
 
   try {
-    const resp = await fetch(url + "/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messages: [
-          { role: "user", content: prompt }
-        ],
-        temperature: 0,
-        stream: false,
-      }),
-    });
-
-    const data = await resp.json();
-    const text = data.choices?.[0]?.message?.content || "";
-
+    const text = await complete(url, systemPrompt, labels, content);
     onProgress(1, 1, "done");
 
     const result = parseResponse(text, labels);
@@ -261,20 +263,10 @@ export async function classifyChunked(
     existingTags: string[];
   },
   labels: Label[],
-  onProgress: ProgressCallback = noopProgress
+  onProgress: ProgressCallback = noopProgress,
+  systemPrompt: string = DEFAULT_SYSTEM_PROMPT
 ): Promise<{ result: ClassificationResult | null; chunks: number; calls: number }> {
-  let url = serverUrl;
-  if (!url) {
-    const info = await loadServerInfo();
-    if (info && await checkServerRunning()) {
-      url = "http://localhost:" + info.port;
-      loadedModelPath = info.modelPath;
-    }
-  }
-
-  if (!url) {
-    throw new Error("Server not running. Run --server-start --model <path> first.");
-  }
+  const url = await resolveServerUrl();
 
   const chunkSize = EFFECTIVE_LIMIT - 2000;
   const chunks: string[] = [];
@@ -299,28 +291,9 @@ export async function classifyChunked(
     const chunk = chunks[i];
     onProgress(i, chunks.length, `chunk ${i + 1}/${chunks.length}`);
 
-    const labelsText = labels.map((l) => l.name + ": " + l.description).join("\n");
-
-    const prompt = "Classify this document by selecting ONE label from the list below.\n\nLABELS:\n" + labelsText + "\n\nDOCUMENT:\n" + chunk + "\n\nYour response must be ONLY the name of the best matching label (e.g. \"banking\"). Do not include the description.";
-
     try {
-      const response = await fetch(url + "/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [
-            { role: "user", content: prompt }
-          ],
-          temperature: 0,
-          stream: false,
-        }),
-      });
-
+      const text = await complete(url, systemPrompt, labels, chunk);
       totalCalls++;
-
-      const data = await response.json();
-      const text = data.choices?.[0]?.message?.content || "";
-
       const parsed = parseResponse(text, labels);
       if (parsed && parsed.labels.length > 0) {
         const label = parsed.labels[0];

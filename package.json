@@ -1,14 +1,17 @@
 {
   "name": "local-ai-classifier",
-  "module": "index.ts",
+  "module": "src/index.ts",
   "type": "module",
   "private": true,
+  "license": "MIT",
+  "description": "Offline macOS CLI that classifies text files with a local GGUF model and writes labels as xattr tags",
   "scripts": {
     "prebuild": "bun run scripts/download-llama.ts",
     "build": "bun build --compile --target bun --outfile classifier src/index.ts",
     "dist": "mkdir -p classifier-dist && cp classifier classifier-dist/ && cp -a bin classifier-dist/",
     "start": "bun run src/index.ts",
-    "test": "bun test"
+    "test": "bun test src",
+    "test:e2e": "bun test e2e"
   },
   "devDependencies": {
     "@types/bun": "latest"
