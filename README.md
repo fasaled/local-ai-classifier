@@ -1,14 +1,18 @@
 # Local AI File Classifier
 
-Offline CLI for macOS that classifies text files with a **local LLM** and writes labels as filesystem tags (`xattr`). Files are never moved, renamed, or modified.
+A **PoC harness** for trying local GGUF models and system prompts on a real task: classify a folder of text files, offline, on macOS.
 
-The tool is **model-agnostic**: you pass any instruction-tuned [GGUF](https://github.com/ggml-org/ggml/blob/master/docs/gguf.md) that [llama.cpp](https://github.com/ggml-org/llama.cpp) can load. No model is shipped, and nothing is sent to the network except `localhost`.
+Swap `--model` to compare GGUFs. Swap `--system-prompt` to compare instructions. Labels and documents stay fixed, so differences come from the model or the prompt — not from a hidden API.
+
+Nothing is shipped as “the” model. You bring any instruction-tuned [GGUF](https://github.com/ggml-org/ggml/blob/master/docs/gguf.md) that [llama.cpp](https://github.com/ggml-org/llama.cpp) can load. Inference stays on `localhost`. Files are never moved, renamed, or rewritten; labels go to `xattr`.
 
 ```bash
-./classifier classify \
-  --folder ./docs \
-  --labels examples/labels.yaml \
-  --model models/your-model.gguf
+# same docs + labels, different model
+./classifier classify -f ./docs -l examples/labels.yaml -m models/model-a.gguf --force
+
+# same docs + labels + model, different system prompt
+./classifier classify -f ./docs -l examples/labels.yaml -m models/model-a.gguf \
+  --system-prompt prompts/variant.txt --force
 ```
 
 ## Requirements
@@ -47,7 +51,7 @@ bun run src/index.ts classify --folder ./docs --labels examples/labels.yaml --mo
   --model ./models/your-model.gguf
 ```
 
-Swap models by changing `--model`. No config change, no rebuild. Point `--folder` at your own documents when you are ready.
+That is one PoC run. Change `--model` or `--system-prompt` and run again with `--force` to compare. No rebuild. Point `--folder` at your own documents when you want a domain-specific trial.
 
 ```
 [00:00] OK     adoption-papers.txt          → pets
@@ -106,7 +110,7 @@ See `examples/labels.yaml`. Describe the **subject** of the document, not the fi
 
 ## System prompts
 
-`--system-prompt` is optional. Omit it to use the built-in classifier prompt. Pass a file to evaluate a different policy against the same labels, documents, and model.
+This is the other axis of the PoC. `--system-prompt` is optional. Omit it to use the built-in classifier prompt. Pass a file to try a different policy against the same labels, documents, and model.
 
 ```bash
 ./classifier classify \

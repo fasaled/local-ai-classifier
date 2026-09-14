@@ -28,7 +28,7 @@ type Command =
 
 function printHelp(): void {
   console.log(`
-File Classifier CLI - Tag files using a local LLM
+File Classifier CLI — PoC harness for local GGUF models and system prompts
 
 Usage:
   classifier classify [options]           Classify files in a folder
@@ -41,7 +41,7 @@ Commands:
     --folder, -f        Path to the folder to process (required)
     --labels, -l         Path to the YAML file with label definitions (required)
     --model, -m         Path to the GGUF model file (required)
-    --system-prompt, -s Optional system prompt file (for prompt/model eval)
+    --system-prompt, -s Optional system prompt file (compare prompts / models)
     --force             Reprocess files already classified
     --watch, -w         Keep server running and auto-classify new files
     --help, -h          Show help for this command
@@ -83,7 +83,7 @@ Options:
   --folder, -f <path>         Path to the folder to process (required)
   --labels, -l <yaml>         Path to the YAML file with label definitions (required)
   --model, -m <path>          Path to the GGUF model file (required)
-  --system-prompt, -s <file>  Optional system prompt file. Default: built-in classifier prompt.
+  --system-prompt, -s <file>  Optional system prompt file (PoC: try a prompt vs the built-in default).
                               Must ask for exactly one label name (see README).
   --force                     Reprocess files already classified by this tool
   --watch, -w                 Keep server running and auto-classify new files

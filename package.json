@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "license": "MIT",
-  "description": "Offline macOS CLI that classifies text files with a local GGUF model and writes labels as xattr tags",
+  "description": "PoC harness for trying local GGUF models and system prompts on offline text classification (macOS)",
   "scripts": {
     "prebuild": "bun run scripts/download-llama.ts",
     "build": "bun build --compile --target bun --outfile classifier src/index.ts",
